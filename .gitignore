@@ -1,0 +1,3 @@
+# Build directories
+demos/*/build/
+demos/*/elf/
