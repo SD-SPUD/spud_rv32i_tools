@@ -37,12 +37,7 @@ sudo apt update
 sudo apt install gcc-riscv64-unknown-elf
 ```
 
-**macOS (with Homebrew):**
-```bash
-brew tap riscv-software-src/riscv
-brew install riscv-tools
 ```
-
 **Windows:**
 - Download pre-built toolchain from [SiFive](https://www.sifive.com/software)
 - Or use WSL with Ubuntu instructions
@@ -142,7 +137,7 @@ A simple "Hello World" program that outputs text via UART. Demonstrates:
 
 ## Hardware Integration
 
-The generated ELF files are designed to work with the RISC-V SoC FPGA project located at `../vivado_proj/spud_riscv_soc`. 
+The generated ELF files are designed to work with the RISC-V SoC FPGA project spud.
 
 To load and run programs on the FPGA:
 1. Build your demo: `make hello_world`
