@@ -1,97 +1,100 @@
-#include <stdint.h>
-
-#define CSR_SIM_CTRL_EXIT (0 << 24)
-#define CSR_SIM_CTRL_PUTC (1 << 24)
-
-#define GPIO_BASE 0x94000000
-#define GPIO_DIRECTION  (GPIO_BASE + 0x00)
-#define GPIO_INPUT      (GPIO_BASE + 0x04)
-#define GPIO_OUTPUT     (GPIO_BASE + 0x08)
-#define GPIO_OUTPUT_SET (GPIO_BASE + 0x0C)
-#define GPIO_OUTPUT_CLR (GPIO_BASE + 0x10)
-
-static inline void sim_exit(int exitcode)
-{
-    unsigned int arg = CSR_SIM_CTRL_EXIT | ((unsigned char)exitcode);
-    asm volatile ("csrw dscratch,%0": : "r" (arg));
-}
-
-static inline void sim_putc(int ch)
-{
-    unsigned int arg = CSR_SIM_CTRL_PUTC | (ch & 0xFF);
-    asm volatile ("csrw dscratch,%0": : "r" (arg));
-}
-
-void str_put(const char* str) {
-    for(unsigned int i=0; str[i] != '\0'; i++) {
-        sim_putc(str[i]);
-    }
-}
-
-void gpio_write(uint32_t pin, uint32_t value) {
-    if (value) {
-        *(volatile uint32_t*)GPIO_OUTPUT_SET = (1 << pin);
-    } else {
-        *(volatile uint32_t*)GPIO_OUTPUT_CLR = (1 << pin);
-    }
-}
-
-uint32_t gpio_read(uint32_t pin) {
-    uint32_t value = *(volatile uint32_t*)GPIO_INPUT;
-    return (value >> pin) & 1;
-}
-
-void gpio_set_direction(uint32_t pin, uint32_t direction) {
-    uint32_t current = *(volatile uint32_t*)GPIO_DIRECTION;
-    if (direction) {
-        current |= (1 << pin);
-    } else {
-        current &= ~(1 << pin);
-    }
-    *(volatile uint32_t*)GPIO_DIRECTION = current;
-}
+#include "spudkit.h"
 
 int main() {
-    str_put("GPIO Test Demo\n");
-    str_put("==============\n\n");
-    
-    str_put("Setting up GPIO pins...\n");
-    gpio_set_direction(0, 1);
-    gpio_set_direction(1, 1);
-    gpio_set_direction(2, 0);
-    gpio_set_direction(3, 0);
-    
-    str_put("Testing GPIO writes...\n");
+    // initialize spudkit library
+    spudkit_init();
+
+    sim_puts("SpudKit GPIO Test Demo\n");
+    sim_puts("======================\n\n");
+    uart_puts("\r\nSpudKit GPIO Test Demo via UART\r\n");
+    uart_puts("==============================\r\n\r\n");
+
+    sim_puts("Setting up GPIO pins...\n");
+    uart_puts("Setting up GPIO pins...\r\n");
+    gpio_set_direction(0, GPIO_OUTPUT);
+    gpio_set_direction(1, GPIO_OUTPUT);
+    gpio_set_direction(2, GPIO_INPUT);
+    gpio_set_direction(3, GPIO_INPUT);
+
+    sim_puts("Testing GPIO writes...\n");
+    uart_puts("Testing GPIO writes...\r\n");
     gpio_write(0, 1);
     gpio_write(1, 0);
-    str_put("GPIO pin 0 set to HIGH\n");
-    str_put("GPIO pin 1 set to LOW\n");
-    
-    str_put("\nTesting GPIO reads...\n");
-    uint32_t pin2_value = gpio_read(2);
-    uint32_t pin3_value = gpio_read(3);
-    
-    str_put("GPIO pin 2 value: ");
+    sim_puts("GPIO pin 0 set to HIGH\n");
+    sim_puts("GPIO pin 1 set to LOW\n");
+    uart_puts("GPIO pin 0 set to HIGH\r\n");
+    uart_puts("GPIO pin 1 set to LOW\r\n");
+
+    sim_puts("\nTesting GPIO reads...\n");
+    uart_puts("\r\nTesting GPIO reads...\r\n");
+    uint8_t pin2_value = gpio_read(2);
+    uint8_t pin3_value = gpio_read(3);
+
+    sim_puts("GPIO pin 2 value: ");
     sim_putc('0' + pin2_value);
-    str_put("\n");
-    
-    str_put("GPIO pin 3 value: ");
+    sim_puts("\n");
+    uart_puts("GPIO pin 2 value: ");
+    uart_putc('0' + pin2_value);
+    uart_puts("\r\n");
+
+    sim_puts("GPIO pin 3 value: ");
     sim_putc('0' + pin3_value);
-    str_put("\n");
-    
-    str_put("\nToggling output pins...\n");
+    sim_puts("\n");
+    uart_puts("GPIO pin 3 value: ");
+    uart_putc('0' + pin3_value);
+    uart_puts("\r\n");
+
+    sim_puts("\nToggling output pins...\n");
+    uart_puts("\r\nToggling output pins...\r\n");
     for (int i = 0; i < 5; i++) {
         gpio_write(0, i % 2);
         gpio_write(1, (i + 1) % 2);
-        str_put("Toggle ");
+
+        sim_puts("Toggle ");
         sim_putc('0' + i);
-        str_put(" - Pin 0: ");
+        sim_puts(" - Pin 0: ");
         sim_putc('0' + (i % 2));
-        str_put(", Pin 1: ");
+        sim_puts(", Pin 1: ");
         sim_putc('0' + ((i + 1) % 2));
-        str_put("\n");
+        sim_puts("\n");
+
+        uart_puts("Toggle ");
+        uart_putc('0' + i);
+        uart_puts(" - Pin 0: ");
+        uart_putc('0' + (i % 2));
+        uart_puts(", Pin 1: ");
+        uart_putc('0' + ((i + 1) % 2));
+        uart_puts("\r\n");
+
+        delay_ms(500);
     }
-    
-    str_put("\nGPIO test complete!\n");
+
+    sim_puts("\nTesting bulk GPIO operations...\n");
+    uart_puts("\r\nTesting bulk GPIO operations...\r\n");
+
+    // test gpio_toggle function
+    for(int i = 0; i < 10; i++) {
+        gpio_toggle(0);
+        gpio_toggle(1);
+        uart_puts("Toggled pins 0 and 1\r\n");
+        delay_ms(200);
+    }
+
+    // test bulk operations
+    gpio_write_mask(0x03, 0x03); // set pins 0 and 1 high
+    uart_puts("Set pins 0,1 HIGH using mask\r\n");
+    delay_ms(1000);
+
+    gpio_write_mask(0x03, 0x00); // set pins 0 and 1 low
+    uart_puts("Set pins 0,1 LOW using mask\r\n");
+    delay_ms(1000);
+
+    uint32_t all_pins = gpio_read_all();
+    uart_puts("All GPIO pins state: 0x");
+    sim_put_hex8(all_pins & 0xFF);
+    uart_puts("\r\n");
+
+    sim_puts("\nSpudKit GPIO test complete!\n");
+    uart_puts("\r\nSpudKit GPIO test complete!\r\n");
     return 0;
 }
