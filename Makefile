@@ -16,6 +16,11 @@ ifdef SIM_DISPLAY
 CFLAGS += -DSIM_DISPLAY
 endif
 
+# Optional UART display flag - use with UART_DISPLAY=1
+ifdef UART_DISPLAY
+CFLAGS += -DUART_DISPLAY
+endif
+
 # Default demo to build if none specified
 DEFAULT_DEMO = hello_world
 
@@ -37,14 +42,16 @@ help:
 	@echo ""
 	@echo "Options:"
 	@echo "  SIM_DISPLAY=1      - Enable simulation display mode"
+	@echo "  UART_DISPLAY=1     - Enable UART display mode"
 	@echo ""
 	@echo "Available demos:"
 	@for demo in $(DEMOS); do echo "  $$demo"; done
 	@echo ""
 	@echo "Examples:"
-	@echo "  make hello_world              - Build hello_world demo"
-	@echo "  SIM_DISPLAY=1 make hello_world - Build with simulation display"
-	@echo "  make run hello_world          - Run hello_world on testbench"
+	@echo "  make hello_world               - Build hello_world demo"
+	@echo "  SIM_DISPLAY=1 make hello_world  - Build with simulation display"
+	@echo "  UART_DISPLAY=1 make hello_world - Build with UART display"
+	@echo "  make run hello_world           - Run hello_world on testbench"
 
 # List available demos
 .PHONY: list

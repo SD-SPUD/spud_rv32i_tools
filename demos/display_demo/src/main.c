@@ -88,7 +88,7 @@ int main() {
             uart_puts("\r\n");
         }
 
-        // delay_ms(100);  // ~10 FPS for readable animation
+        // delay_ms();  // ~10 FPS for readable animation
         frame++;
     }
 

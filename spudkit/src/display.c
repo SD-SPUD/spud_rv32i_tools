@@ -1,38 +1,72 @@
 #include "display.h"
 #include "spudkit.h"
+#ifdef UART_DISPLAY
+#include "uart.h"
+#endif
+
+// Conditional macros for display output - switch between SIM and UART modes
+#ifdef UART_DISPLAY
+    #define DISPLAY_PUTS(str)           uart_puts(str)
+    #define DISPLAY_PUTC(ch)            uart_putc(ch)
+    #define DISPLAY_PUT_HEX16(val)      uart_put_hex16(val)
+    #define DISPLAY_CURSOR_HOME()       uart_cursor_home()
+    #define DISPLAY_CLEAR_SCREEN()      uart_clear_screen()
+    #define DISPLAY_SET_COLOR(fg, bg)   uart_set_color(fg, bg)
+    #define DISPLAY_RESET_COLOR()       uart_reset_color()
+    #define DISPLAY_RGB565_TO_ANSI(rgb) uart_rgb565_to_ansi(rgb)
+#elif defined(SIM_DISPLAY)
+    #define DISPLAY_PUTS(str)           sim_puts(str)
+    #define DISPLAY_PUTC(ch)            sim_putc(ch)
+    #define DISPLAY_PUT_HEX16(val)      sim_put_hex16(val)
+    #define DISPLAY_CURSOR_HOME()       sim_cursor_home()
+    #define DISPLAY_CLEAR_SCREEN()      sim_clear_screen()
+    #define DISPLAY_SET_COLOR(fg, bg)   sim_set_color(fg, bg)
+    #define DISPLAY_RESET_COLOR()       sim_reset_color()
+    #define DISPLAY_RGB565_TO_ANSI(rgb) sim_rgb565_to_ansi(rgb)
+#else
+    // No display output - stub functions
+    #define DISPLAY_PUTS(str)
+    #define DISPLAY_PUTC(ch)
+    #define DISPLAY_PUT_HEX16(val)
+    #define DISPLAY_CURSOR_HOME()
+    #define DISPLAY_CLEAR_SCREEN()
+    #define DISPLAY_SET_COLOR(fg, bg)
+    #define DISPLAY_RESET_COLOR()
+    #define DISPLAY_RGB565_TO_ANSI(rgb) 0
+#endif
 
 // frame buffer - stores the entire display in memory
 static spud_color_t framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH];
 
-// simulation functions for --sim-display mode
-#ifdef SIM_DISPLAY
+// display functions for both SIM_DISPLAY and UART_DISPLAY modes
+#if defined(SIM_DISPLAY) || defined(UART_DISPLAY)
 
 void display_sim_print_pixel(uint8_t x, uint8_t y, spud_color_t color) {
-    sim_puts("PIXEL(");
-    sim_put_hex16(x);
-    sim_putc(',');
-    sim_put_hex16(y);
-    sim_puts(")=0x");
-    sim_put_hex16(color);
-    sim_putc('\n');
+    DISPLAY_PUTS("PIXEL(");
+    DISPLAY_PUT_HEX16(x);
+    DISPLAY_PUTC(',');
+    DISPLAY_PUT_HEX16(y);
+    DISPLAY_PUTS(")=0x");
+    DISPLAY_PUT_HEX16(color);
+    DISPLAY_PUTS("\r\n");
 }
 
 void display_sim_print_buffer(void) {
     // move cursor to top-left to redraw over previous display
-    sim_cursor_home();
+    DISPLAY_CURSOR_HOME();
 
     // draw top border
-    sim_reset_color();
-    sim_puts("┌");
+    DISPLAY_RESET_COLOR();
+    DISPLAY_PUTS("┌");
     for(int x = 0; x < DISPLAY_WIDTH; x++) {
-        sim_puts("─");
+        DISPLAY_PUTS("─");
     }
-    sim_puts("┐\n");
+    DISPLAY_PUTS("┐\r\n");
 
     // draw the 64x64 display with half-height blocks (2 pixels per character)
     for(int y = 0; y < DISPLAY_HEIGHT; y += 2) {
-        sim_reset_color();
-        sim_puts("│"); // left border
+        DISPLAY_RESET_COLOR();
+        DISPLAY_PUTS("│"); // left border
 
         for(int x = 0; x < DISPLAY_WIDTH; x++) {
             spud_color_t top_pixel = framebuffer[y][x];
@@ -40,40 +74,43 @@ void display_sim_print_buffer(void) {
 
             if(top_pixel == COLOR_BLACK && bottom_pixel == COLOR_BLACK) {
                 // both pixels black - use space
-                sim_reset_color();
-                sim_puts(" ");
+                DISPLAY_RESET_COLOR();
+                DISPLAY_PUTS(" ");
             } else if(top_pixel != COLOR_BLACK && bottom_pixel == COLOR_BLACK) {
                 // top pixel colored, bottom black - upper half block
-                uint8_t ansi_color = sim_rgb565_to_ansi(top_pixel);
-                sim_set_color(ansi_color, 16); // colored fg, black bg
-                sim_puts("▀");
+                uint8_t ansi_color = DISPLAY_RGB565_TO_ANSI(top_pixel);
+                DISPLAY_SET_COLOR(ansi_color, 16); // colored fg, black bg
+                DISPLAY_PUTS("▀");
+                DISPLAY_RESET_COLOR();
             } else if(top_pixel == COLOR_BLACK && bottom_pixel != COLOR_BLACK) {
                 // top black, bottom colored - lower half block
-                uint8_t ansi_color = sim_rgb565_to_ansi(bottom_pixel);
-                sim_set_color(ansi_color, 16); // colored fg, black bg
-                sim_puts("▄");
+                uint8_t ansi_color = DISPLAY_RGB565_TO_ANSI(bottom_pixel);
+                DISPLAY_SET_COLOR(ansi_color, 16); // colored fg, black bg
+                DISPLAY_PUTS("▄");
+                DISPLAY_RESET_COLOR();
             } else {
                 // both pixels colored
-                uint8_t top_color = sim_rgb565_to_ansi(top_pixel);
-                uint8_t bottom_color = sim_rgb565_to_ansi(bottom_pixel);
-                sim_set_color(top_color, bottom_color); // top as fg, bottom as bg
-                sim_puts("▀");
+                uint8_t top_color = DISPLAY_RGB565_TO_ANSI(top_pixel);
+                uint8_t bottom_color = DISPLAY_RGB565_TO_ANSI(bottom_pixel);
+                DISPLAY_SET_COLOR(top_color, bottom_color); // top as fg, bottom as bg
+                DISPLAY_PUTS("▀");
+                DISPLAY_RESET_COLOR();
             }
         }
 
-        sim_reset_color();
-        sim_puts("│\n"); // Right border and newline
+        DISPLAY_RESET_COLOR();
+        DISPLAY_PUTS("│\r\n"); // Right border and newline
     }
 
     // Draw bottom border
-    sim_reset_color();
-    sim_puts("└");
+    DISPLAY_RESET_COLOR();
+    DISPLAY_PUTS("└");
     for(int x = 0; x < DISPLAY_WIDTH; x++) {
-        sim_puts("─");
+        DISPLAY_PUTS("─");
     }
-    sim_puts("┘\n");
+    DISPLAY_PUTS("┘\r\n");
 
-    sim_reset_color();
+    DISPLAY_RESET_COLOR();
 }
 
 #endif
@@ -82,10 +119,14 @@ void display_init(void) {
     // initialize framebuffer to black
     mem_set(framebuffer, 0, sizeof(framebuffer));
 
-#ifdef SIM_DISPLAY
-    sim_clear_screen();
-    sim_puts("DISPLAY_INIT: Simulation mode enabled - Visual Terminal Display\n");
-    sim_puts("Display size: 64x64 pixels\n\n");
+#if defined(SIM_DISPLAY) || defined(UART_DISPLAY)
+    DISPLAY_CLEAR_SCREEN();
+    #ifdef UART_DISPLAY
+    DISPLAY_PUTS("DISPLAY_INIT: UART display mode enabled - Visual Terminal Display\r\n");
+    #else
+    DISPLAY_PUTS("DISPLAY_INIT: Simulation mode enabled - Visual Terminal Display\r\n");
+    #endif
+    DISPLAY_PUTS("Display size: 64x64 pixels\r\n\r\n");
 #else
     // todo: initialize actual 64x64 matrix display hardware
     // this will involve setting up the display controller registers
@@ -100,10 +141,10 @@ void display_clear(spud_color_t color) {
         }
     }
 
-#ifdef SIM_DISPLAY
-    sim_puts("DISPLAY_CLEAR: color=0x");
-    sim_put_hex16(color);
-    sim_putc('\n');
+#if defined(SIM_DISPLAY) || defined(UART_DISPLAY)
+    DISPLAY_PUTS("DISPLAY_CLEAR: color=0x");
+    DISPLAY_PUT_HEX16(color);
+    DISPLAY_PUTS("\r\n");
 #endif
 }
 
@@ -112,7 +153,7 @@ void display_set_pixel(uint8_t x, uint8_t y, spud_color_t color) {
 
     framebuffer[y][x] = color;
 
-#ifdef SIM_DISPLAY
+#if defined(SIM_DISPLAY) || defined(UART_DISPLAY)
     // display_sim_print_pixel(x, y, color);
 #endif
 }
@@ -239,8 +280,8 @@ void display_draw_string(uint8_t x, uint8_t y, const char* str, spud_color_t col
 }
 
 void display_update(void) {
-#ifdef SIM_DISPLAY
-    sim_puts("DISPLAY_UPDATE: Refreshing display\n");
+#if defined(SIM_DISPLAY) || defined(UART_DISPLAY)
+    DISPLAY_PUTS("DISPLAY_UPDATE: Refreshing display\r\n");
     display_sim_print_buffer();
 #else
     // TODO: Transfer framebuffer to actual 64x64 matrix display
