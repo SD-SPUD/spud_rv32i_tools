@@ -4,7 +4,7 @@
 void led_init(void) {
     // initialize led controller - turn off both leds
     volatile uint32_t* led_ctrl = (volatile uint32_t*)(SPUD_LED_BASE + LED_REG_CTRL);
-    *led_ctrl = 0x10; // both leds off
+    *led_ctrl = 0x00; // both leds off
 }
 
 void led_set(uint8_t led_num, uint8_t state) {
