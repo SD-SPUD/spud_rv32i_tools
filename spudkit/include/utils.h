@@ -41,6 +41,18 @@ uint8_t count_bits(uint32_t value);
 uint8_t find_first_set(uint32_t value);
 uint32_t reverse_bits(uint32_t value);
 
+// generic fast div for any type
+#define FAST_DIV(a, b, shift_bits) ({ \
+    typeof(a) _a = (a); \
+    typeof(b) _b = (b); \
+    int _shift = 0; \
+    while(_b < (1 << ((shift_bits) - 1))) { \
+        _b <<= 1; \
+        _shift++; \
+    } \
+    (_a << _shift) >> ((shift_bits) - _shift); \
+})
+
 // memory utilities
 void mem_set(void* ptr, uint8_t value, uint32_t size);
 void mem_cpy(void* dest, const void* src, uint32_t size);

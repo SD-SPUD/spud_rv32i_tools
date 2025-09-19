@@ -13,6 +13,11 @@ int main() {
     uart_puts("\r\nSpudKit Display Demo\r\n");
     uart_puts("===================\r\n\r\n");
 
+
+    /*
+
+    */
+   
     // seed random number generator with a simple value
     rand_seed(0x12345678);
 
