@@ -1,4 +1,5 @@
 #include "ffloat.h"
+#include "uart.h"
 /**
   * FAKE FLOAT or FIXED FLOAT
   * we use a mantisa to do operations with the float
@@ -6,6 +7,13 @@
   */
 
 void ffprint(ffloat value) {
+    // handle negative values
+    if (value < 0) {
+        sim_putc('-');
+        uart_putc('-');
+        value = -value;
+    }
+
     // extract integer part
     int32_t int_part = value >> MANTISA;
 
@@ -13,18 +21,31 @@ void ffprint(ffloat value) {
     uint32_t frac_part = value & ((1 << MANTISA) - 1);
 
     // convert fractional to decimal (multiply by 10000 for 4 decimal places)
-    uint32_t decimal = (frac_part * 10000) >> MANTISA;
+    uint32_t decimal = (frac_part * 10000) / (1 << MANTISA);
 
-    // print integer.decimal with padding
+    // print integer.decimal with padding to both sim and uart
     sim_put_dec(int_part);
+    uart_put_dec(int_part);
+
     sim_putc('.');
+    uart_putc('.');
 
     // pad with zeros if needed
-    if (decimal < 1000) sim_putc('0');
-    if (decimal < 100) sim_putc('0');
-    if (decimal < 10) sim_putc('0');
+    if (decimal < 1000) {
+        sim_putc('0');
+        uart_putc('0');
+    }
+    if (decimal < 100) {
+        sim_putc('0');
+        uart_putc('0');
+    }
+    if (decimal < 10) {
+        sim_putc('0');
+        uart_putc('0');
+    }
 
     sim_put_dec(decimal);
+    uart_put_dec(decimal);
 }
 
 /*

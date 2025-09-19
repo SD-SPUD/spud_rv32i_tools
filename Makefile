@@ -6,10 +6,10 @@ LD = $(RISCV_PREFIX)ld
 OBJCOPY = $(RISCV_PREFIX)objcopy
 OBJDUMP = $(RISCV_PREFIX)objdump
 
-# Compiler flags for RV32I
-CFLAGS = -march=rv32i_zicsr -mabi=ilp32 -O2 -Wall -Wextra -nostdlib -nostartfiles -fno-builtin -Ispudkit/include
-ASFLAGS = -march=rv32i_zicsr -mabi=ilp32
-LDFLAGS = -march=rv32i_zicsr -mabi=ilp32 -nostdlib
+# Compiler flags for RV32IM
+CFLAGS = -march=rv32im_zicsr -mabi=ilp32 -O2 -Wall -Wextra -nostdlib -nostartfiles -fno-builtin -Ispudkit/include
+ASFLAGS = -march=rv32im_zicsr -mabi=ilp32
+LDFLAGS = -march=rv32im_zicsr -mabi=ilp32 -nostdlib
 
 # Optional simulation display flag - use with SIM_DISPLAY=1
 ifdef SIM_DISPLAY
