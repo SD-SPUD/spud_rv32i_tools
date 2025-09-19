@@ -35,16 +35,16 @@ uint8_t timer_is_expired(void) {
 }
 
 void delay_ms(uint32_t milliseconds) {
-    // Simple busy-wait delay (assumes 100MHz clock)
-    volatile uint32_t cycles = milliseconds * 100000; // 100k cycles per ms at 100MHz
+    // Simple busy-wait delay (CPU clock is 25MHz, not 100MHz)
+    volatile uint32_t cycles = milliseconds * 25000; // 25k cycles per ms at 25MHz
     for(volatile uint32_t i = 0; i < cycles; i++) {
         asm volatile("nop");
     }
 }
 
 void delay_us(uint32_t microseconds) {
-    // Simple busy-wait delay (assumes 100MHz clock)
-    volatile uint32_t cycles = microseconds * 100; // 100 cycles per us at 100MHz
+    // Simple busy-wait delay (CPU clock is 25MHz, not 100MHz)
+    volatile uint32_t cycles = microseconds * 25; // 25 cycles per us at 25MHz
     for(volatile uint32_t i = 0; i < cycles; i++) {
         asm volatile("nop");
     }

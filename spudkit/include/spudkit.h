@@ -11,6 +11,7 @@
 #include "spi.h"
 #include "irq.h"
 #include "utils.h"
+#include "led.h"
 
 // spudkit version
 #define SPUDKIT_VERSION_MAJOR 1
@@ -24,7 +25,8 @@
 #define SPUD_IRQ_BASE       0x90000000
 #define SPUD_SPI_BASE       0x93000000
 #define SPUD_GPIO_BASE      0x94000000
-#define SPUD_DISPLAY_BASE   0x95000000  // future display controller
+#define SPUD_LED_BASE       0x95000000
+#define SPUD_DISPLAY_BASE   0x96000000  // future display controller
 
 // simulation control csr definitions
 #define CSR_SIM_CTRL_EXIT (0 << 24)
