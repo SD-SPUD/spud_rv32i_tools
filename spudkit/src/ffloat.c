@@ -55,7 +55,7 @@ void ffprint(ffloat value) {
  */
 ffloat ffsin(ffloat x) {
     // normalize to [0, 2*pi] range
-    ffloat two_pi = FFMULT(FFPI, FFLOAT(2));
+    ffloat two_pi = FF2PI;
     if (x < 0) {
         int32_t k = FFDIV(-x, two_pi) + 1;
         x += FFMULT(k, two_pi);
@@ -86,11 +86,9 @@ ffloat ffsin(ffloat x) {
     ffloat x7 = FFMULT(x5, x2);
     // taylor series: x - x^3/3! + x^5/5! - x^7/7!
     ffloat result = x - FFMULT(x3, INV_FACT3) + FFMULT(x5, INV_FACT5) - FFMULT(x7, INV_FACT7);
-
-    return negate ? -result : result;
+return negate ? -result : result;
 }
 
 ffloat ffcos(ffloat x) {
-    // cos(x) = sin(x + pi/2)
-    return ffsin(x + FFDIV(FFPI, FFLOAT(2)));
+    return ffsin(x - FFPIHALF);
 }

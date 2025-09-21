@@ -1,23 +1,17 @@
+/**
+  * a 3D spinning donut
+  */
 #include "spudkit.h"
-#include <stdio.h>
-#include <math.h>
-#include <stdint.h>
-#include <string.h>
-#include <unistd.h>
+
+// radius of circle
+#define R1 20
 
 int main() {
     // initialize the spudkit library
     spudkit_init();
-    sim_puts("\r\nSpudKit Display Demo\r\n");
-    sim_puts("===================\r\n\r\n");
-    uart_puts("\r\nSpudKit Display Demo\r\n");
+    uart_puts("\r\nSpudKit DONUT Demo\r\n");
     uart_puts("===================\r\n\r\n");
 
-
-    /*
-
-    */
-   
     // seed random number generator with a simple value
     rand_seed(0x12345678);
 
@@ -27,48 +21,38 @@ int main() {
         COLOR_CYAN, COLOR_MAGENTA, COLOR_WHITE
     };
     uint8_t num_colors = 7;
+    while(1) {
 
-    float A = 0, B = 0;
-    float i, j;
-    int k;
-    float z[1760];
-    char b[1760];
-    printf("\x1b[2J");
-    for(;;) {
-        memset(b,32,1760);
-        memset(z,0,7040);
-        for(j=0; j < 6.28; j += 0.07) {
-            for(i=0; i < 6.28; i += 0.02) {
-                float c = sin(i);
-                float d = cos(j);
-                float e = sin(A);
-                float f = sin(j);
-                float g = cos(A);
-                float h = d + 2;
-                float D = 1 / (c * h * e + f * g + 5);
-                float l = cos(i);
-                float m = cos(B);
-                float n = sin(B);
-                float t = c * h * g - f * e;
-                int x = 40 + 30 * D * (l * h * m - t * n);
-                int y= 12 + 15 * D * (l * h * n + t * m);
-                int o = x + 80 * y;
-                int N = 8 * ((f * e - c * d * g) * m - c * d * e - f * g - l * d * n);
-                if(22 > y && y > 0 && x > 0 && 80 > x && D > z[o]) {
-                    z[o] = D;
-                    b[o] = ".,-~:;=!*#$@"[N > 0 ? N : 0];
-                }
+        // draw a circle with debug output
+        for(ffloat theta = FFLOAT(0); theta < FF2PI; theta += FFLOAT(0.1)) {
+            /*
+            ffprint(ffsin(theta));
+            uart_puts(", ");
+            ffprint(ffcos(theta));
+            uart_puts("\r\n");
+            */
+
+            struct ffvect3_t vect = { FFLOAT(R1), FFLOAT(0), FFLOAT(0) };
+
+            // rotate on the z axis
+            vect = ROTATEZ_VECT3(vect, theta);
+
+            // translate to center of screen (32, 32)
+            int screen_x = FFINT(vect.x) + 32;
+            int screen_y = FFINT(vect.y) + 32;
+
+            ffvect3_print(vect);
+            uart_puts("\r\n");
+
+            // clamp to screen bounds
+            if (screen_x >= 0 && screen_x < 64 && screen_y >= 0 && screen_y < 64) {
+                display_set_pixel(screen_x, screen_y, COLOR_RED);
             }
         }
-        printf("\x1b[H");
-        for(k = 0; k < 1761; k++) {
-            putchar(k % 80 ? b[k] : 10);
-            A += 0.00004;
-            B += 0.00002;
-        }
-        usleep(30000);
+
+        display_update();
+        delay_ms(10);
     }
     return 0;
-}
 
 }

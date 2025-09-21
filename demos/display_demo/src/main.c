@@ -1,3 +1,7 @@
+/**
+ * a 3d spining donut
+ */
+
 #include "spudkit.h"
 
 int main() {

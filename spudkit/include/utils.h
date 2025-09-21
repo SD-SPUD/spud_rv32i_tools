@@ -41,7 +41,6 @@ uint8_t count_bits(uint32_t value);
 uint8_t find_first_set(uint32_t value);
 uint32_t reverse_bits(uint32_t value);
 
-
 // memory utilities
 void mem_set(void* ptr, uint8_t value, uint32_t size);
 void mem_cpy(void* dest, const void* src, uint32_t size);
