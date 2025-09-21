@@ -1,6 +1,7 @@
 /**
   * a 3D spinning donut
   */
+
 #include "spudkit.h"
 
 // radius of circle
@@ -25,12 +26,13 @@ int main() {
 
         // draw a circle with debug output
         for(ffloat theta = FFLOAT(0); theta < FF2PI; theta += FFLOAT(0.1)) {
-            /*
+            uart_puts("theta: ");
+            ffprint(theta);
+            uart_puts(" sin: ");
             ffprint(ffsin(theta));
-            uart_puts(", ");
+            uart_puts(" cos: ");
             ffprint(ffcos(theta));
             uart_puts("\r\n");
-            */
 
             struct ffvect3_t vect = { FFLOAT(R1), FFLOAT(0), FFLOAT(0) };
 
@@ -41,8 +43,8 @@ int main() {
             int screen_x = FFINT(vect.x) + 32;
             int screen_y = FFINT(vect.y) + 32;
 
-            ffvect3_print(vect);
-            uart_puts("\r\n");
+            // ffvect3_print(vect);
+            // uart_puts("\r\n");
 
             // clamp to screen bounds
             if (screen_x >= 0 && screen_x < 64 && screen_y >= 0 && screen_y < 64) {
