@@ -10,11 +10,11 @@ void led_init(void) {
 void led_set(uint8_t led_num, uint8_t state) {
     volatile uint32_t* led_ctrl = (volatile uint32_t*)(SPUD_LED_BASE + LED_REG_CTRL);
     uint32_t current = *led_ctrl;
-
     if(led_num == 0) {
+
         // control led0 (bit 0)
         if(state) {
-            current |= (1 << LED0_BIT);   // set bit 0
+            current |= (1 << LED0_BIT);   // set bit 1
         } else {
             current &= ~(1 << LED0_BIT);  // clear bit 0
         }
@@ -23,7 +23,7 @@ void led_set(uint8_t led_num, uint8_t state) {
         if(state) {
             current |= (1 << LED1_BIT);   // set bit 1
         } else {
-            current &= ~(1 << LED1_BIT);  // clear bit 1
+            current &= ~(1 << LED1_BIT);  // clear bit 0
         }
     }
 

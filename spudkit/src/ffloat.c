@@ -54,11 +54,18 @@ void ffprint(ffloat value) {
  * we can precalculate some constants and get a pretty fast sin
  */
 ffloat ffsin(ffloat x) {
-    // precalculate xxx
-    ffloat k = FFDIV(FFINT(x * FFLOAT(2.0)), FFPI);
+    // Handle very small values: sin(x) ≈ x for small x
+    if (x == 0) return 0;
+    if (x > -FFLOAT(0.01) && x < FFLOAT(0.01)) {
+        return x;  // For very small angles, sin(x) ≈ x
+    }
+
+    // divide into quadrents
+    ffloat k = FFDIV(FFMULT(x, FFLOAT(2.0)), FFPI);
 
     // basically get mod 2/pi
-    x = FFMULT(FFMULT(x - k, FFPI), FFLOAT(0.5));
+    // x = FFMULT(FFMULT(x - k, FFPI), FFLOAT(0.5));
+    x = FFMOD(x, FFPIHALF);
 
     // taylor series constants (1/factorial)
     const ffloat INV_FACT3 = FFDIV(FFLOAT(1), FFLOAT(6));
@@ -66,7 +73,7 @@ ffloat ffsin(ffloat x) {
     const ffloat INV_FACT7 = FFDIV(FFLOAT(1), FFLOAT(5040));
 
     // get the quadent
-    int q = k % 4;
+    int q = FFINT(k) % 4;
     switch (q) {
     case 0: x = x; break;
     case 1: x = FFMULT(FFPI, FFLOAT(0.5)) - x; break;
@@ -95,43 +102,12 @@ ffloat ffsin(ffloat x) {
  * this is analogous to the sin implementation, but with its own series and normalization
  */
 ffloat ffcos(ffloat x) {
-    // normalize to [0, 2*pi] range
-    ffloat two_pi = FF2PI;
-    if (x < 0) {
-        int32_t k = FFDIV(-x, two_pi) + 1;
-        x += FFMULT(k, two_pi);
-    }
-    if (x >= two_pi) {
-        int32_t k = FFDIV(x, two_pi);
-        x -= FFMULT(k, two_pi);
+    // Handle very small values: cos(x) ≈ 1 for small x
+    if (x == 0) return FFLOAT(1.0);
+    if (x > -FFLOAT(0.01) && x < FFLOAT(0.01)) {
+        return FFLOAT(1.0);  // For very small angles, cos(x) ≈ 1
     }
 
-    // quadrant reduction and sign correction for cosine
-    int negate = 0;
-    if (x >= FFPI) {
-        x -= FFPI;
-        negate = 1;
-    }
-    if (x > FFDIV(FFPI, FFLOAT(2))) {
-        x = FFPI - x;
-    }
-
-    // taylor series constants for cosine
-    const ffloat INV_FACT2 = FFDIV(FFLOAT(1), FFLOAT(2));
-    const ffloat INV_FACT4 = FFDIV(FFLOAT(1), FFLOAT(24));
-    const ffloat INV_FACT6 = FFDIV(FFLOAT(1), FFLOAT(720));
-
-    // powers
-    ffloat x2 = FFMULT(x, x);
-    ffloat x4 = FFMULT(x2, x2);
-    ffloat x6 = FFMULT(x4, x2);
-
-    // taylor series: 1 - x^2/2! + x^4/4! - x^6/6!
-    ffloat result = FFLOAT(1)
-                  - FFMULT(x2, INV_FACT2)
-                  + FFMULT(x4, INV_FACT4)
-                  - FFMULT(x6, INV_FACT6);
-
-    return negate ? -result : result;
+    return ffsin(x + FFPIHALF);
 }
 
