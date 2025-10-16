@@ -12,6 +12,8 @@
 #include "irq.h"
 #include "utils.h"
 #include "led.h"
+#include "ffloat.h"
+#include "ffvect3.h"
 
 // spudkit version
 #define SPUDKIT_VERSION_MAJOR 1

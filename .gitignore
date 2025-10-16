@@ -1,3 +1,5 @@
 # Build directories
 demos/*/build/
 demos/*/elf/
+*.o
+spudkit/build/*
