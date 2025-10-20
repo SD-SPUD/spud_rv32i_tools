@@ -13,9 +13,17 @@ int main() {
     int count = 0;
     while (1) {
         *led_ctrl = 0;
-        sleepx(1000000);
+        sleepx(4000000);
         *led_ctrl = 1;
+        sleepx(4000000);
+        *led_ctrl = 0;
         sleepx(1000000);
+        *led_ctrl = 2;
+        sleepx(1000000);
+        *led_ctrl = 0;
+        sleepx(8000000);
+        *led_ctrl = 3;
+        sleepx(8000000);
     }
     return 0;
 }

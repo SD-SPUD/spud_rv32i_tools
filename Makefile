@@ -1,5 +1,5 @@
 # RISC-V RV32I Toolchain Configuration
-RISCV_PREFIX = riscv64-unknown-elf-
+RISCV_PREFIX = riscv32-unknown-elf-
 CC = $(RISCV_PREFIX)gcc
 AS = $(RISCV_PREFIX)as
 LD = $(RISCV_PREFIX)ld
