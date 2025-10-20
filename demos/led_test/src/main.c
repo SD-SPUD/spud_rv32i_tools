@@ -12,18 +12,18 @@ int main() {
     volatile uint32_t* led_ctrl = (volatile uint32_t*)0x95000000;
     int count = 0;
     while (1) {
-        *led_ctrl = 0;
-        sleepx(4000000);
-        *led_ctrl = 1;
-        sleepx(4000000);
-        *led_ctrl = 0;
-        sleepx(1000000);
         *led_ctrl = 2;
         sleepx(1000000);
         *led_ctrl = 0;
-        sleepx(8000000);
+        sleepx(1000000);
+        *led_ctrl = 1;
+        sleepx(1000000);
+        *led_ctrl = 0;
+        sleepx(1000000);
         *led_ctrl = 3;
-        sleepx(8000000);
+        sleepx(1000000);
+        *led_ctrl = 0;
+        sleepx(1000000);
     }
     return 0;
 }

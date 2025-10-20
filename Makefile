@@ -7,7 +7,8 @@ OBJCOPY = $(RISCV_PREFIX)objcopy
 OBJDUMP = $(RISCV_PREFIX)objdump
 
 # Compiler flags for RV32IM
-CFLAGS = -march=rv32im_zicsr -mabi=ilp32 -O2 -Wall -Wextra -nostdlib -nostartfiles -fno-builtin -Ispudkit/include
+CFLAGS = -march=rv32im_zicsr -mabi=ilp32 -O2 -Wall -Wextra -nostdlib -nostartfiles -fno-builtin -Ispudkit/include -funroll-all-loops
+
 ASFLAGS = -march=rv32im_zicsr -mabi=ilp32
 LDFLAGS = -march=rv32im_zicsr -mabi=ilp32 -nostdlib -lgcc
 
