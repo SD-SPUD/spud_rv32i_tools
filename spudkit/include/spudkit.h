@@ -28,7 +28,11 @@
 #define SPUD_SPI_BASE       0x93000000
 #define SPUD_GPIO_BASE      0x94000000
 #define SPUD_LED_BASE       0x95000000
-#define SPUD_DISPLAY_BASE   0x96000000  // future display controller
+#define SPUD_DISPLAY_BASE   0x96000000  // 64x64 matrix display controller
+
+// display controller register offsets
+#define SPUD_DISPLAY_PIXEL_DATA_REG    (SPUD_DISPLAY_BASE + 0x00)  // 24-bit RGB pixel data
+#define SPUD_DISPLAY_PIXEL_ADDR_REG    (SPUD_DISPLAY_BASE + 0x04)  // 12-bit pixel address (0-4095)
 
 // simulation control csr definitions
 #define CSR_SIM_CTRL_EXIT (0 << 24)

@@ -26,8 +26,8 @@ int main() {
         static ffloat spin2 = 0;
         display_clear(0);
         // draw a circle with debug output
-            for(ffloat phi = FFLOAT(0); phi < FF2PI; phi += FFLOAT(0.075)) {
-                for(ffloat theta = FFLOAT(0); theta < FF2PI; theta += FFLOAT(0.2)) {
+            for(ffloat phi = FFLOAT(0); phi < FF2PI; phi += FFLOAT(0.2)) {
+                for(ffloat theta = FFLOAT(0); theta < FF2PI; theta += FFLOAT(0.6)) {
                 struct ffvect3_t vect = { FFLOAT(R1), FFLOAT(0), FFLOAT(0) };
 
                 // rotate on the z axis
@@ -70,8 +70,8 @@ int main() {
                 }
             }
         }
-        spin = (spin >= FF2PI) ? 0 : spin + FFLOAT(0.2);
-        spin2 = (spin2 >= FF2PI) ? 0 : spin2 + FFLOAT(0.05);
+        spin = (spin >= FF2PI) ? 0 : spin + FFLOAT(0.05);
+        spin2 = (spin2 >= FF2PI) ? 0 : spin2 + FFLOAT(0.01);
         display_update();
     }
     return 0;
