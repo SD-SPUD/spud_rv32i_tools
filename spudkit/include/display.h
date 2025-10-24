@@ -8,17 +8,32 @@
 #define DISPLAY_HEIGHT 64
 #define DISPLAY_PIXELS (DISPLAY_WIDTH * DISPLAY_HEIGHT)
 
-// color definitions (assuming rgb565 format)
-typedef uint16_t spud_color_t;
+// color format switch based on simulation vs real hardware
+#ifdef SIM_DISPLAY
+    // use RGB565 format for simulation (16-bit)
+    typedef uint16_t spud_color_t;
 
-#define COLOR_BLACK   0x0000
-#define COLOR_WHITE   0xFFFF
-#define COLOR_RED     0xF800
-#define COLOR_GREEN   0x07E0
-#define COLOR_BLUE    0x001F
-#define COLOR_YELLOW  0xFFE0
-#define COLOR_CYAN    0x07FF
-#define COLOR_MAGENTA 0xF81F
+    #define COLOR_BLACK   0x0000
+    #define COLOR_WHITE   0xFFFF
+    #define COLOR_RED     0xF800
+    #define COLOR_GREEN   0x07E0
+    #define COLOR_BLUE    0x001F
+    #define COLOR_YELLOW  0xFFE0
+    #define COLOR_CYAN    0x07FF
+    #define COLOR_MAGENTA 0xF81F
+#else
+    // use RGB888 format for real hardware (24-bit 0xFFFFFF)
+    typedef uint32_t spud_color_t;
+
+    #define COLOR_BLACK   0x000000
+    #define COLOR_WHITE   0xFFFFFF
+    #define COLOR_RED     0x0000FF
+    #define COLOR_GREEN   0x00FF00
+    #define COLOR_BLUE    0xFF0000
+    #define COLOR_YELLOW  0x00FFFF
+    #define COLOR_CYAN    0xFFFF00
+    #define COLOR_MAGENTA 0xFF00FF
+#endif
 
 // display initialization
 void display_init(void);

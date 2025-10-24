@@ -158,6 +158,27 @@ void display_set_pixel(uint8_t x, uint8_t y, spud_color_t color) {
 #endif
 }
 
+void display_update_pixel(uint8_t x, uint8_t y, spud_color_t color) {
+    if(x >= DISPLAY_WIDTH || y >= DISPLAY_HEIGHT) return;
+
+    framebuffer[y][x] = color;
+
+#if defined(SIM_DISPLAY) || defined(UART_DISPLAY)
+    // For simulation, we can't update individual pixels without redrawing
+    // Just update framebuffer, will be shown on next display_update()
+#else
+    // Update single pixel on hardware display
+    volatile uint32_t* display_data_reg = (volatile uint32_t*)SPUD_DISPLAY_PIXEL_DATA_REG;
+    volatile uint32_t* display_addr_reg = (volatile uint32_t*)SPUD_DISPLAY_PIXEL_ADDR_REG;
+
+    uint16_t pixel_addr = y * DISPLAY_WIDTH + x;
+
+    // color is already in RGB888 format for real hardware, no conversion needed
+    *display_addr_reg = pixel_addr;
+    *display_data_reg = color;
+#endif
+}
+
 spud_color_t display_get_pixel(uint8_t x, uint8_t y) {
     if(x >= DISPLAY_WIDTH || y >= DISPLAY_HEIGHT) return COLOR_BLACK;
     return framebuffer[y][x];
@@ -279,20 +300,6 @@ void display_draw_string(uint8_t x, uint8_t y, const char* str, spud_color_t col
     }
 }
 
-// Convert RGB565 to RGB888 (24-bit)
-static uint32_t rgb565_to_rgb888(spud_color_t rgb565) {
-    uint8_t r = (rgb565 >> 11) & 0x1F;  // 5-bit red
-    uint8_t g = (rgb565 >> 5) & 0x3F;   // 6-bit green
-    uint8_t b = rgb565 & 0x1F;          // 5-bit blue
-
-    // Scale to 8-bit values
-    r = (r << 3) | (r >> 2);  // 5-bit to 8-bit
-    g = (g << 2) | (g >> 4);  // 6-bit to 8-bit
-    b = (b << 3) | (b >> 2);  // 5-bit to 8-bit
-
-    return (r << 16) | (g << 8) | b;
-}
-
 void display_update(void) {
 #if defined(SIM_DISPLAY) || defined(UART_DISPLAY)
     DISPLAY_PUTS("DISPLAY_UPDATE: Refreshing display\r\n");
@@ -305,11 +312,11 @@ void display_update(void) {
     for(int y = 0; y < DISPLAY_HEIGHT; y++) {
         for(int x = 0; x < DISPLAY_WIDTH; x++) {
             uint16_t pixel_addr = y * DISPLAY_WIDTH + x;
-            uint32_t pixel_data = rgb565_to_rgb888(framebuffer[y][x]);
 
+            // framebuffer already contains RGB888 colors for real hardware, no conversion needed
             // Write address and data to display controller
             *display_addr_reg = pixel_addr;
-            *display_data_reg = pixel_data;
+            *display_data_reg = framebuffer[y][x];
         }
     }
 #endif
