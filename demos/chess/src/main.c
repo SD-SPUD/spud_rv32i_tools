@@ -31,6 +31,9 @@ int main() {
 
     uint16_t last_buttons = arcade_read_all();
 
+    const int bignum = 1000000;
+    int arr[bignum];
+
     while(1) {
         // check for Y button press (reset game)
         uint16_t buttons = arcade_read_all();
