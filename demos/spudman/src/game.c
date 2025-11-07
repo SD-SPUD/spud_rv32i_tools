@@ -1,4 +1,5 @@
 #include "game.h"
+#include "spud_logo.h"
 
 // UCF-themed maze (16x16 grid, 0=empty+pellet, 1=wall, 3=power pellet, 5=ghost home)
 // All 0s changed to 1s - blank canvas for you to customize!
@@ -11,10 +12,10 @@ static const uint8_t initial_maze[MAZE_HEIGHT][MAZE_WIDTH] = {
     {1,0,1,1,0,1,0,1,1,1,1,0,1,1,0,1},
     {1,0,1,1,0,1,0,1,1,1,1,0,0,1,0,1},
     {1,0,1,1,0,1,0,1,1,1,1,0,1,1,0,1},
-    {1,0,1,1,0,0,0,1,1,1,1,0,1,1,0,1},  // Ghost home in center
+    {1,0,1,1,0,0,0,1,1,1,1,0,1,1,0,1},  
     {1,0,0,0,0,1,0,0,0,0,0,0,1,1,0,1},
-    {0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+    {1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
     {1,0,1,1,0,1,0,5,5,0,1,0,1,1,0,1},
     {1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1},
     {1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,1},
@@ -102,7 +103,13 @@ void game_init(game_state_t* game) {
     game->lives = STARTING_LIVES;
     game->power_timer = 0;
     game->frame_count = 0;
-    game->game_over = 0;
+    game->game_state = GAME_STATE_HOME;  // Start at home screen
+}
+
+void game_reset(game_state_t* game) {
+    // Reset game to playing state (used when pressing reset button)
+    game_init(game);
+    game->game_state = GAME_STATE_PLAYING;
 }
 
 uint8_t game_can_move(game_state_t* game, int8_t x, int8_t y) {
@@ -265,7 +272,7 @@ void game_check_collisions(game_state_t* game) {
                 uart_puts("Spudman caught!\r\n");
 
                 if (game->lives == 0) {
-                    game->game_over = 1;
+                    game->game_state = GAME_STATE_GAME_OVER;
                     uart_puts("GAME OVER!\r\n");
                 } else {
                     // Reset positions
@@ -281,7 +288,8 @@ void game_check_collisions(game_state_t* game) {
 }
 
 void game_update(game_state_t* game) {
-    if (game->game_over) {
+    // Only update if playing
+    if (game->game_state != GAME_STATE_PLAYING) {
         return;
     }
 
@@ -385,17 +393,88 @@ void game_draw_ghosts(game_state_t* game) {
     }
 }
 
+void game_draw_home_screen(void) {
+    // Clear screen
+    display_clear(COLOR_BACKGROUND);
+
+    // Draw "SPUDMAN" centered with 8x8 font at top (using COLOR_YELLOW from display.h)
+    // "SPUDMAN" = 7 chars * 8 pixels = 56, center = (64-56)/2 = 4
+    display_draw_string_scaled(4, 2, "SPUDMAN", COLOR_YELLOW, COLOR_BACKGROUND, 1);
+
+    // Draw SPUD logo centered (26x26 pixels, center = (64-26)/2 = 19)
+    // Use SpudKit color palette mapping function
+    for (int y = 0; y < IMG_HEIGHT; y++) {
+        for (int x = 0; x < IMG_WIDTH; x++) {
+            uint16_t color_565 = spud_logo[y][x];
+
+            // Skip transparent pixels (0xFFFF is white background in the logo)
+            if (color_565 == 0xFFFF) {
+                continue;  // Leave as black background
+            }
+
+            // Map RGB565 color to closest SpudKit palette color
+            spud_color_t mapped_color = display_map_rgb565_to_palette(color_565);
+
+            display_set_pixel(19 + x, 12 + y, mapped_color);
+        }
+    }
+
+    // Draw black "w" mouth in center of logo (using small font)
+    // Center of 26x26 logo at position 19, so mouth around x=26, y=24
+    display_draw_char_small(27, 24, 'v', COLOR_BLACK, COLOR_YELLOW);
+    display_draw_char_small(30, 24, 'v', COLOR_BLACK, COLOR_YELLOW);
+
+    // Draw instruction with small 4x6 font (centered) at bottom (using COLOR_WHITE from display.h)
+    // "Press A" = 7 chars * 5 pixels = 35, center = (64-35)/2 = 14
+    // "to start" = 8 chars * 5 pixels = 40, center = (64-40)/2 = 12
+    display_draw_string_small(14, 48, "Press A", COLOR_WHITE, COLOR_BACKGROUND);
+    display_draw_string_small(12, 56, "to start", COLOR_WHITE, COLOR_BACKGROUND);
+}
+
+void game_draw_game_over(game_state_t* game) {
+    // Clear screen
+    display_clear(COLOR_BACKGROUND);
+
+    // Draw "GAME OVER"
+    display_draw_string(4, 20, "GAME", COLOR_RED, COLOR_BACKGROUND);
+    display_draw_string(4, 30, "OVER", COLOR_RED, COLOR_BACKGROUND);
+
+    // Draw score
+    char score_text[16];
+    uint32_t score = game->score;
+    score_text[0] = 'S';
+    score_text[1] = 'C';
+    score_text[2] = 'O';
+    score_text[3] = 'R';
+    score_text[4] = 'E';
+    score_text[5] = ':';
+    score_text[6] = '0' + ((score / 100) % 10);
+    score_text[7] = '0' + ((score / 10) % 10);
+    score_text[8] = '0' + (score % 10);
+    score_text[9] = '\0';
+    display_draw_string(4, 40, score_text, COLOR_WHITE, COLOR_BACKGROUND);
+
+    // Draw "Press A"
+    display_draw_string(4, 50, "Press A", COLOR_WHITE, COLOR_BACKGROUND);
+}
+
 void game_draw(game_state_t* game) {
-    // Draw maze and pellets
-    game_draw_maze(game);
+    if (game->game_state == GAME_STATE_HOME) {
+        game_draw_home_screen();
+    } else if (game->game_state == GAME_STATE_GAME_OVER) {
+        game_draw_game_over(game);
+    } else {
+        // Draw maze and pellets
+        game_draw_maze(game);
 
-    // Draw ghosts
-    game_draw_ghosts(game);
+        // Draw ghosts
+        game_draw_ghosts(game);
 
-    // Draw spudman (on top)
-    game_draw_spudman(game);
+        // Draw spudman (on top)
+        game_draw_spudman(game);
 
-    // Draw HUD - score and lives (in unused space or at bottom)
-    // For now, we'll use the maze itself as display area
-    // Could add score overlay if needed
+        // Draw HUD - score and lives (in unused space or at bottom)
+        // For now, we'll use the maze itself as display area
+        // Could add score overlay if needed
+    }
 }

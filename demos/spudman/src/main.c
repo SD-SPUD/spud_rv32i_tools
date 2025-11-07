@@ -43,7 +43,7 @@ int main(void) {
         game_update(&game);
 
         // Render frame
-        display_clear(COLOR_BACKGROUND);
+        display_clear(COLOR_BLACK);
         game_draw(&game);
         display_update();
 

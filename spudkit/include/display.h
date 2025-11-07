@@ -53,6 +53,17 @@ void display_draw_circle(uint8_t x, uint8_t y, uint8_t radius, spud_color_t colo
 void display_draw_char(uint8_t x, uint8_t y, char c, spud_color_t color, spud_color_t bg_color);
 void display_draw_string(uint8_t x, uint8_t y, const char* str, spud_color_t color, spud_color_t bg_color);
 
+// text rendering with scale (scale 1 = 8x8, scale 2 = 16x16, etc.)
+void display_draw_char_scaled(uint8_t x, uint8_t y, char c, spud_color_t color, spud_color_t bg_color, uint8_t scale);
+void display_draw_string_scaled(uint8_t x, uint8_t y, const char* str, spud_color_t color, spud_color_t bg_color, uint8_t scale);
+
+// text rendering with small 4x6 font
+void display_draw_char_small(uint8_t x, uint8_t y, char c, spud_color_t color, spud_color_t bg_color);
+void display_draw_string_small(uint8_t x, uint8_t y, const char* str, spud_color_t color, spud_color_t bg_color);
+
+// color conversion utility
+spud_color_t display_map_rgb565_to_palette(uint16_t color_565);
+
 // display update
 void display_update(void);
 
