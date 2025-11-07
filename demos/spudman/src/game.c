@@ -20,7 +20,7 @@ static const uint8_t initial_maze[MAZE_HEIGHT][MAZE_WIDTH] = {
     {1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1},
     {1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,1},
     {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1}
+    {1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1}
     
     // {1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1},
     // {1,3,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
@@ -221,32 +221,69 @@ void game_update_ghosts(game_state_t* game) {
         uint8_t directions[4] = {DIR_NONE, DIR_NONE, DIR_NONE, DIR_NONE};
         int count = 0;
 
-        if (dx > 0 && game_can_move(game, ghost->x + 1, ghost->y)) directions[count++] = DIR_RIGHT;
-        if (dx < 0 && game_can_move(game, ghost->x - 1, ghost->y)) directions[count++] = DIR_LEFT;
-        if (dy > 0 && game_can_move(game, ghost->x, ghost->y + 1)) directions[count++] = DIR_DOWN;
-        if (dy < 0 && game_can_move(game, ghost->x, ghost->y - 1)) directions[count++] = DIR_UP;
+        // Check each direction, accounting for wraparound
+        int8_t test_x, test_y;
+
+        // Right
+        test_x = (ghost->x + 1) >= MAZE_WIDTH ? 0 : (ghost->x + 1);
+        if (dx > 0 && game_can_move(game, test_x, ghost->y)) directions[count++] = DIR_RIGHT;
+
+        // Left
+        test_x = (ghost->x - 1) < 0 ? MAZE_WIDTH - 1 : (ghost->x - 1);
+        if (dx < 0 && game_can_move(game, test_x, ghost->y)) directions[count++] = DIR_LEFT;
+
+        // Down
+        test_y = (ghost->y + 1) >= MAZE_HEIGHT ? 0 : (ghost->y + 1);
+        if (dy > 0 && game_can_move(game, ghost->x, test_y)) directions[count++] = DIR_DOWN;
+
+        // Up
+        test_y = (ghost->y - 1) < 0 ? MAZE_HEIGHT - 1 : (ghost->y - 1);
+        if (dy < 0 && game_can_move(game, ghost->x, test_y)) directions[count++] = DIR_UP;
 
         // Pick random valid direction if any
         if (count > 0) {
             ghost->direction = directions[(game->frame_count + i) % count];
 
-            // Move ghost
+            // Calculate new position
+            int8_t new_x = ghost->x;
+            int8_t new_y = ghost->y;
+
             switch (ghost->direction) {
-                case DIR_UP: ghost->y--; break;
-                case DIR_DOWN: ghost->y++; break;
-                case DIR_LEFT: ghost->x--; break;
-                case DIR_RIGHT: ghost->x++; break;
+                case DIR_UP: new_y--; break;
+                case DIR_DOWN: new_y++; break;
+                case DIR_LEFT: new_x--; break;
+                case DIR_RIGHT: new_x++; break;
             }
 
-            // Wraparound tunnels (left/right)
-            if (ghost->x < 0) {
-                ghost->x = MAZE_WIDTH - 1;
-            } else if (ghost->x >= MAZE_WIDTH) {
-                ghost->x = 0;
+            // Wraparound tunnels (left/right and top/bottom)
+            if (new_x < 0) {
+                new_x = MAZE_WIDTH - 1;
+            } else if (new_x >= MAZE_WIDTH) {
+                new_x = 0;
             }
 
-            ghost->pixel_x = ghost->x * TILE_SIZE;
-            ghost->pixel_y = ghost->y * TILE_SIZE;
+            if (new_y < 0) {
+                new_y = MAZE_HEIGHT - 1;
+            } else if (new_y >= MAZE_HEIGHT) {
+                new_y = 0;
+            }
+
+            // Check if another ghost is already at this position
+            uint8_t occupied = 0;
+            for (int j = 0; j < MAX_GHOSTS; j++) {
+                if (i != j && game->ghosts[j].x == new_x && game->ghosts[j].y == new_y) {
+                    occupied = 1;
+                    break;
+                }
+            }
+
+            // Only move if position is not occupied by another ghost
+            if (!occupied) {
+                ghost->x = new_x;
+                ghost->y = new_y;
+                ghost->pixel_x = ghost->x * TILE_SIZE;
+                ghost->pixel_y = ghost->y * TILE_SIZE;
+            }
         }
     }
 }
@@ -435,27 +472,27 @@ void game_draw_game_over(game_state_t* game) {
     // Clear screen
     display_clear(COLOR_BACKGROUND);
 
-    // Draw "GAME OVER"
-    display_draw_string(4, 20, "GAME", COLOR_RED, COLOR_BACKGROUND);
-    display_draw_string(4, 30, "OVER", COLOR_RED, COLOR_BACKGROUND);
+    // Draw "GAME OVER" centered with small font
+    display_draw_string_small(8, 16, "GAME OVER", COLOR_RED, COLOR_BACKGROUND);
 
-    // Draw score
-    char score_text[16];
+    // Draw score with small font on separate lines
+    display_draw_string_small(16, 28, "SCORE", COLOR_WHITE, COLOR_BACKGROUND);
+
+    // Format score as string
+    char score_text[6];
     uint32_t score = game->score;
-    score_text[0] = 'S';
-    score_text[1] = 'C';
-    score_text[2] = 'O';
-    score_text[3] = 'R';
-    score_text[4] = 'E';
-    score_text[5] = ':';
-    score_text[6] = '0' + ((score / 100) % 10);
-    score_text[7] = '0' + ((score / 10) % 10);
-    score_text[8] = '0' + (score % 10);
-    score_text[9] = '\0';
-    display_draw_string(4, 40, score_text, COLOR_WHITE, COLOR_BACKGROUND);
+    score_text[0] = '0' + ((score / 1000) % 10);
+    score_text[1] = '0' + ((score / 100) % 10);
+    score_text[2] = '0' + ((score / 10) % 10);
+    score_text[3] = '0' + (score % 10);
+    score_text[4] = '\0';
 
-    // Draw "Press A"
-    display_draw_string(4, 50, "Press A", COLOR_WHITE, COLOR_BACKGROUND);
+    // Center the score number
+    display_draw_string_small(18, 36, score_text, COLOR_YELLOW, COLOR_BACKGROUND);
+
+    // Draw "Press A to continue" with small font
+    display_draw_string_small(14, 50, "Press A", COLOR_WHITE, COLOR_BACKGROUND);
+    display_draw_string_small(8, 58, "for menu", COLOR_WHITE, COLOR_BACKGROUND);
 }
 
 void game_draw(game_state_t* game) {
