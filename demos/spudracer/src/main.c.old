@@ -1,0 +1,615 @@
+#include "spudkit.h"
+
+// Game constants
+#define SCREEN_WIDTH 64
+#define SCREEN_HEIGHT 64
+#define NUM_LANES 3
+#define LANE_WIDTH 16
+#define ROAD_WIDTH (NUM_LANES * LANE_WIDTH)
+#define ROAD_START_X ((SCREEN_WIDTH - ROAD_WIDTH) / 2)
+
+// Player car constants
+#define PLAYER_CAR_WIDTH 10
+#define PLAYER_CAR_HEIGHT 14
+#define PLAYER_Y 45  // Near bottom of screen
+#define PLAYER_START_LANE 1  // Middle lane
+
+// Game speed and timing
+#define BASE_SCROLL_SPEED 2
+#define BOOST_DURATION 30  // frames
+#define COLLISION_SLOWDOWN 60  // frames
+#define SLOWDOWN_SPEED 1
+
+// Bot car constants
+#define MAX_BOT_CARS 4
+#define BOT_CAR_WIDTH 10
+#define BOT_CAR_HEIGHT 12
+#define BOT_SPAWN_INTERVAL 60  // frames between spawns
+
+// Landmark types
+#define LANDMARK_NONE 0
+#define LANDMARK_POND 1
+#define LANDMARK_HEC 2
+#define LANDMARK_FLAG 3
+#define LANDMARK_PALM_LEFT 4
+#define LANDMARK_PALM_RIGHT 5
+#define LANDMARK_CONE 6
+
+// Speed Racer inspired colors
+#define COLOR_ROAD_GRAY 0x404040
+#define COLOR_GRASS_GREEN 0x00AA00
+#define COLOR_LANE_WHITE 0xFFFFFF
+#define COLOR_LANE_YELLOW 0xFFFF00
+#define COLOR_PLAYER_CAR 0xFFFFFF  // White Mach 5
+#define COLOR_PLAYER_ACCENT 0xFF0000  // Red accents
+#define COLOR_POTATO_BROWN 0x804000
+#define COLOR_WATER_BLUE 0x0066FF
+#define COLOR_FOUNTAIN_WHITE 0xFFFFFF
+#define COLOR_BUILDING_GRAY 0x808080
+#define COLOR_PALM_TRUNK 0x804000
+#define COLOR_PALM_LEAVES 0x00FF00
+#define COLOR_FLAG_RED 0xFF0000
+#define COLOR_FLAG_BLUE 0x0000FF
+#define COLOR_CONE_ORANGE 0xFF8800
+
+// Player state
+typedef struct {
+    int8_t lane;  // 0, 1, or 2
+    int8_t target_lane;
+    int8_t x;
+    int8_t y;
+    uint8_t boost_timer;
+    uint8_t collision_timer;
+    uint32_t distance;  // Score
+    uint32_t frame_count;
+} player_t;
+
+// Bot car state
+typedef struct {
+    int8_t lane;
+    int16_t y;  // Can be negative when spawning
+    uint8_t active;
+    spud_color_t color;
+} bot_car_t;
+
+// Landmark state
+typedef struct {
+    uint8_t type;
+    int16_t y;  // Scroll position
+    uint8_t active;
+} landmark_t;
+
+// Game state
+player_t player;
+bot_car_t bot_cars[MAX_BOT_CARS];
+landmark_t landmarks[8];
+uint8_t spawn_timer;
+uint16_t last_buttons;
+
+// Player car sprite - Mach 5 style with visible potato driver
+const uint8_t player_car_sprite[PLAYER_CAR_HEIGHT][PLAYER_CAR_WIDTH] = {
+    {0,0,0,1,1,1,1,0,0,0},  // Top - spoiler
+    {0,0,1,1,1,1,1,1,0,0},  // Hood
+    {0,1,1,2,2,2,2,1,1,0},  // Windshield with potato
+    {0,1,2,3,3,3,3,2,1,0},  // Potato driver visible
+    {0,1,2,3,3,3,3,2,1,0},  // More potato
+    {0,1,1,2,2,2,2,1,1,0},  // Windshield bottom
+    {1,1,1,1,1,1,1,1,1,1},  // Body
+    {1,4,1,1,1,1,1,1,4,1},  // Body with red accents
+    {1,4,1,1,1,1,1,1,4,1},  // More red accents
+    {1,1,1,1,1,1,1,1,1,1},  // Body
+    {1,1,1,1,1,1,1,1,1,1},  // Lower body
+    {0,1,1,1,1,1,1,1,1,0},  // Wheel wells
+    {0,5,5,1,1,1,1,5,5,0},  // Wheels
+    {0,0,0,1,1,1,1,0,0,0},  // Exhaust
+};
+
+// Bot car sprite (simple)
+const uint8_t bot_car_sprite[BOT_CAR_HEIGHT][BOT_CAR_WIDTH] = {
+    {0,0,0,1,1,1,1,0,0,0},
+    {0,0,1,1,1,1,1,1,0,0},
+    {0,1,1,1,1,1,1,1,1,0},
+    {0,1,2,1,1,1,1,2,1,0},
+    {1,1,1,1,1,1,1,1,1,1},
+    {1,1,1,1,1,1,1,1,1,1},
+    {1,1,1,1,1,1,1,1,1,1},
+    {1,1,1,1,1,1,1,1,1,1},
+    {0,1,1,1,1,1,1,1,1,0},
+    {0,1,1,1,1,1,1,1,1,0},
+    {0,3,3,1,1,1,1,3,3,0},
+    {0,0,0,1,1,1,1,0,0,0},
+};
+
+// Function prototypes
+void game_init(void);
+void game_update(void);
+void game_render(void);
+void draw_road(uint16_t scroll_offset);
+void draw_player_car(void);
+void draw_bot_car(bot_car_t* bot);
+void spawn_bot_car(void);
+void spawn_landmark(void);
+void update_bot_cars(void);
+void update_landmarks(void);
+void draw_landmarks(void);
+void check_collisions(void);
+void handle_input(uint16_t buttons);
+int8_t get_lane_x(int8_t lane);
+
+void game_init(void) {
+    // Initialize SpudKit
+    spudkit_init();
+    display_init();
+    arcade_init();
+
+    uart_puts("\r\n");
+    uart_puts("=========================================\r\n");
+    uart_puts("    SPUDRACER - Speed Racer @ UCF\r\n");
+    uart_puts("=========================================\r\n");
+    uart_puts("\r\n");
+    uart_puts("Controls:\r\n");
+    uart_puts("  LEFT/RIGHT - Change lanes\r\n");
+    uart_puts("  A Button   - Boost (brief invincibility)\r\n");
+    uart_puts("  START      - Pause (not implemented yet)\r\n");
+    uart_puts("\r\n");
+    uart_puts("Features:\r\n");
+    uart_puts("  - Dodge bot cars in 3 lanes\r\n");
+    uart_puts("  - Pass UCF landmarks:\r\n");
+    uart_puts("    * Reflection Pond with fountain\r\n");
+    uart_puts("    * HEC 438 building\r\n");
+    uart_puts("    * American flag on lawn\r\n");
+    uart_puts("    * Palm trees (it's Florida!)\r\n");
+    uart_puts("  - Score based on distance\r\n");
+    uart_puts("  - Collisions slow you down\r\n");
+    uart_puts("\r\n");
+    uart_puts("Starting race...\r\n\r\n");
+
+    // Initialize player
+    player.lane = PLAYER_START_LANE;
+    player.target_lane = PLAYER_START_LANE;
+    player.x = get_lane_x(PLAYER_START_LANE);
+    player.y = PLAYER_Y;
+    player.boost_timer = 0;
+    player.collision_timer = 0;
+    player.distance = 0;
+    player.frame_count = 0;
+
+    // Initialize bot cars
+    for (int i = 0; i < MAX_BOT_CARS; i++) {
+        bot_cars[i].active = 0;
+    }
+
+    // Initialize landmarks
+    for (int i = 0; i < 8; i++) {
+        landmarks[i].active = 0;
+    }
+
+    spawn_timer = 0;
+    last_buttons = 0;
+
+    display_clear(COLOR_BLACK);
+}
+
+int8_t get_lane_x(int8_t lane) {
+    return ROAD_START_X + (lane * LANE_WIDTH) + (LANE_WIDTH - PLAYER_CAR_WIDTH) / 2;
+}
+
+void handle_input(uint16_t buttons) {
+    // Lane switching with LEFT/RIGHT
+    if ((buttons & (1 << ARCADE_BUTTON_LEFT)) && !(last_buttons & (1 << ARCADE_BUTTON_LEFT))) {
+        if (player.target_lane > 0) {
+            player.target_lane--;
+        }
+    }
+    if ((buttons & (1 << ARCADE_BUTTON_RIGHT)) && !(last_buttons & (1 << ARCADE_BUTTON_RIGHT))) {
+        if (player.target_lane < NUM_LANES - 1) {
+            player.target_lane++;
+        }
+    }
+
+    // Boost/trick with A button
+    if ((buttons & (1 << ARCADE_BUTTON_A)) && !(last_buttons & (1 << ARCADE_BUTTON_A))) {
+        if (player.boost_timer == 0 && player.collision_timer == 0) {
+            player.boost_timer = BOOST_DURATION;
+        }
+    }
+
+    last_buttons = buttons;
+}
+
+void spawn_bot_car(void) {
+    // Find inactive bot car slot
+    for (int i = 0; i < MAX_BOT_CARS; i++) {
+        if (!bot_cars[i].active) {
+            bot_cars[i].active = 1;
+            bot_cars[i].lane = player.frame_count % NUM_LANES;  // Pseudo-random lane
+            bot_cars[i].y = -BOT_CAR_HEIGHT;
+
+            // Vary bot car colors
+            spud_color_t colors[] = {0xFF0000, 0x0000FF, 0xFFFF00, 0xFF00FF};
+            bot_cars[i].color = colors[i % 4];
+            break;
+        }
+    }
+}
+
+void spawn_landmark(void) {
+    // Find inactive landmark slot
+    for (int i = 0; i < 8; i++) {
+        if (!landmarks[i].active) {
+            landmarks[i].active = 1;
+            landmarks[i].y = -20;
+
+            // Cycle through landmark types
+            uint8_t type_cycle = (player.frame_count / 200) % 7;
+            if (type_cycle == 0) landmarks[i].type = LANDMARK_POND;
+            else if (type_cycle == 1) landmarks[i].type = LANDMARK_HEC;
+            else if (type_cycle == 2) landmarks[i].type = LANDMARK_FLAG;
+            else if (type_cycle == 3) landmarks[i].type = LANDMARK_PALM_LEFT;
+            else if (type_cycle == 4) landmarks[i].type = LANDMARK_PALM_RIGHT;
+            else if (type_cycle == 5) landmarks[i].type = LANDMARK_CONE;
+            else landmarks[i].type = LANDMARK_PALM_LEFT;
+            break;
+        }
+    }
+}
+
+void update_bot_cars(void) {
+    uint8_t scroll_speed = (player.collision_timer > 0) ? SLOWDOWN_SPEED : BASE_SCROLL_SPEED;
+
+    for (int i = 0; i < MAX_BOT_CARS; i++) {
+        if (bot_cars[i].active) {
+            bot_cars[i].y += scroll_speed;
+
+            // Deactivate if off screen
+            if (bot_cars[i].y > SCREEN_HEIGHT) {
+                bot_cars[i].active = 0;
+            }
+        }
+    }
+}
+
+void update_landmarks(void) {
+    uint8_t scroll_speed = (player.collision_timer > 0) ? SLOWDOWN_SPEED : BASE_SCROLL_SPEED;
+
+    for (int i = 0; i < 8; i++) {
+        if (landmarks[i].active) {
+            landmarks[i].y += scroll_speed;
+
+            // Deactivate if off screen
+            if (landmarks[i].y > SCREEN_HEIGHT + 20) {
+                landmarks[i].active = 0;
+            }
+        }
+    }
+}
+
+void check_collisions(void) {
+    // Skip collision if boosting
+    if (player.boost_timer > 0 || player.collision_timer > 0) {
+        return;
+    }
+
+    // Check collision with bot cars
+    for (int i = 0; i < MAX_BOT_CARS; i++) {
+        if (bot_cars[i].active && bot_cars[i].lane == player.lane) {
+            // Simple bounding box collision
+            int bot_y_top = bot_cars[i].y;
+            int bot_y_bottom = bot_cars[i].y + BOT_CAR_HEIGHT;
+            int player_y_top = player.y;
+            int player_y_bottom = player.y + PLAYER_CAR_HEIGHT;
+
+            if (!(bot_y_bottom < player_y_top || bot_y_top > player_y_bottom)) {
+                // Collision detected!
+                player.collision_timer = COLLISION_SLOWDOWN;
+                bot_cars[i].active = 0;  // Remove bot car
+            }
+        }
+    }
+}
+
+void game_update(void) {
+    // Read buttons
+    uint16_t buttons = arcade_read_all();
+    handle_input(buttons);
+
+    // Update player lane position (smooth movement)
+    int8_t target_x = get_lane_x(player.target_lane);
+    if (player.x < target_x) {
+        player.x += 2;
+        if (player.x > target_x) player.x = target_x;
+    } else if (player.x > target_x) {
+        player.x -= 2;
+        if (player.x < target_x) player.x = target_x;
+    }
+
+    // Update current lane when reached target
+    if (player.x == target_x) {
+        player.lane = player.target_lane;
+    }
+
+    // Update timers
+    if (player.boost_timer > 0) player.boost_timer--;
+    if (player.collision_timer > 0) player.collision_timer--;
+
+    // Update game objects
+    update_bot_cars();
+    update_landmarks();
+
+    // Spawn new bot cars
+    spawn_timer++;
+    if (spawn_timer >= BOT_SPAWN_INTERVAL) {
+        spawn_bot_car();
+        spawn_timer = 0;
+    }
+
+    // Spawn landmarks periodically
+    if (player.frame_count % 150 == 0) {
+        spawn_landmark();
+    }
+
+    // Check collisions
+    check_collisions();
+
+    // Update score (distance)
+    if (player.collision_timer == 0) {
+        player.distance += BASE_SCROLL_SPEED;
+    } else {
+        player.distance += SLOWDOWN_SPEED;
+    }
+
+    player.frame_count++;
+}
+
+void draw_road(uint16_t scroll_offset) {
+    // Draw grass on sides
+    for (int y = 0; y < SCREEN_HEIGHT; y++) {
+        for (int x = 0; x < ROAD_START_X; x++) {
+            display_set_pixel(x, y, COLOR_GRASS_GREEN);
+        }
+        for (int x = ROAD_START_X + ROAD_WIDTH; x < SCREEN_WIDTH; x++) {
+            display_set_pixel(x, y, COLOR_GRASS_GREEN);
+        }
+    }
+
+    // Draw road surface
+    for (int y = 0; y < SCREEN_HEIGHT; y++) {
+        for (int x = ROAD_START_X; x < ROAD_START_X + ROAD_WIDTH; x++) {
+            display_set_pixel(x, y, COLOR_ROAD_GRAY);
+        }
+    }
+
+    // Draw lane markings (dashed lines)
+    for (int lane = 1; lane < NUM_LANES; lane++) {
+        int lane_x = ROAD_START_X + (lane * LANE_WIDTH);
+        for (int y = 0; y < SCREEN_HEIGHT; y++) {
+            // Animated dashed line
+            if (((y + scroll_offset) % 8) < 4) {
+                display_set_pixel(lane_x, y, COLOR_LANE_YELLOW);
+            }
+        }
+    }
+
+    // Draw road edges
+    for (int y = 0; y < SCREEN_HEIGHT; y++) {
+        display_set_pixel(ROAD_START_X, y, COLOR_LANE_WHITE);
+        display_set_pixel(ROAD_START_X + ROAD_WIDTH - 1, y, COLOR_LANE_WHITE);
+    }
+}
+
+void draw_player_car(void) {
+    spud_color_t colors[6] = {
+        COLOR_BLACK,           // 0
+        COLOR_PLAYER_CAR,      // 1 - white body
+        COLOR_CYAN,            // 2 - windshield
+        COLOR_POTATO_BROWN,    // 3 - potato driver
+        COLOR_PLAYER_ACCENT,   // 4 - red accents
+        COLOR_BLACK            // 5 - wheels
+    };
+
+    // Boost effect - flash white
+    if (player.boost_timer > 0) {
+        colors[1] = (player.boost_timer % 4 < 2) ? COLOR_YELLOW : COLOR_WHITE;
+    }
+
+    for (int sy = 0; sy < PLAYER_CAR_HEIGHT; sy++) {
+        for (int sx = 0; sx < PLAYER_CAR_WIDTH; sx++) {
+            uint8_t pixel = player_car_sprite[sy][sx];
+            if (pixel > 0) {
+                int px = player.x + sx;
+                int py = player.y + sy;
+                if (px >= 0 && px < SCREEN_WIDTH && py >= 0 && py < SCREEN_HEIGHT) {
+                    display_set_pixel(px, py, colors[pixel]);
+                }
+            }
+        }
+    }
+}
+
+void draw_bot_car(bot_car_t* bot) {
+    if (!bot->active) return;
+
+    spud_color_t colors[4] = {
+        COLOR_BLACK,     // 0
+        bot->color,      // 1 - car body
+        COLOR_CYAN,      // 2 - windshield
+        COLOR_BLACK      // 3 - wheels
+    };
+
+    int car_x = get_lane_x(bot->lane);
+
+    for (int sy = 0; sy < BOT_CAR_HEIGHT; sy++) {
+        for (int sx = 0; sx < BOT_CAR_WIDTH; sx++) {
+            uint8_t pixel = bot_car_sprite[sy][sx];
+            if (pixel > 0) {
+                int px = car_x + sx;
+                int py = bot->y + sy;
+                if (px >= 0 && px < SCREEN_WIDTH && py >= 0 && py < SCREEN_HEIGHT) {
+                    display_set_pixel(px, py, colors[pixel]);
+                }
+            }
+        }
+    }
+}
+
+void draw_landmarks(void) {
+    for (int i = 0; i < 8; i++) {
+        if (!landmarks[i].active) continue;
+
+        int ly = landmarks[i].y;
+
+        switch (landmarks[i].type) {
+            case LANDMARK_POND:
+                // Draw reflection pond in distance (small circle)
+                if (ly >= 0 && ly < SCREEN_HEIGHT - 15) {
+                    // Draw pond (circle)
+                    for (int r = 0; r < 8; r++) {
+                        for (int a = 0; a < 360; a += 30) {
+                            int px = SCREEN_WIDTH / 2 + (r * 1) / 2;
+                            int py = ly + 10 + r / 2;
+                            if (px >= 0 && px < SCREEN_WIDTH && py >= 0 && py < SCREEN_HEIGHT) {
+                                display_set_pixel(px, py, COLOR_WATER_BLUE);
+                            }
+                        }
+                    }
+                    // Fountain in center
+                    display_set_pixel(SCREEN_WIDTH / 2, ly + 10, COLOR_FOUNTAIN_WHITE);
+                    display_set_pixel(SCREEN_WIDTH / 2, ly + 9, COLOR_FOUNTAIN_WHITE);
+                    display_set_pixel(SCREEN_WIDTH / 2 + 1, ly + 10, COLOR_FOUNTAIN_WHITE);
+                    display_set_pixel(SCREEN_WIDTH / 2 - 1, ly + 10, COLOR_FOUNTAIN_WHITE);
+                }
+                break;
+
+            case LANDMARK_HEC:
+                // Draw HEC 438 building and sign
+                if (ly >= 0 && ly < SCREEN_HEIGHT - 20) {
+                    // Building
+                    display_fill_rect(2, ly, 12, 18, COLOR_BUILDING_GRAY);
+                    // Sign with text
+                    display_draw_string(4, ly + 5, "HEC", COLOR_WHITE, COLOR_BLACK);
+                    display_draw_string(4, ly + 13, "438", COLOR_WHITE, COLOR_BLACK);
+                }
+                break;
+
+            case LANDMARK_FLAG:
+                // American flag on lawn
+                if (ly >= 0 && ly < SCREEN_HEIGHT - 15) {
+                    // Flag pole (right side of screen)
+                    for (int p = 0; p < 12; p++) {
+                        display_set_pixel(SCREEN_WIDTH - 5, ly + p, COLOR_BUILDING_GRAY);
+                    }
+                    // Flag (red/white stripes, blue canton)
+                    display_fill_rect(SCREEN_WIDTH - 10, ly, 5, 2, COLOR_FLAG_BLUE);
+                    display_fill_rect(SCREEN_WIDTH - 10, ly + 2, 8, 1, COLOR_FLAG_RED);
+                    display_fill_rect(SCREEN_WIDTH - 10, ly + 3, 8, 1, COLOR_WHITE);
+                    display_fill_rect(SCREEN_WIDTH - 10, ly + 4, 8, 1, COLOR_FLAG_RED);
+                }
+                break;
+
+            case LANDMARK_PALM_LEFT:
+                // Palm tree on left side
+                if (ly >= 0 && ly < SCREEN_HEIGHT - 10) {
+                    // Trunk
+                    for (int t = 0; t < 8; t++) {
+                        display_set_pixel(3, ly + t, COLOR_PALM_TRUNK);
+                    }
+                    // Leaves
+                    display_set_pixel(2, ly, COLOR_PALM_LEAVES);
+                    display_set_pixel(3, ly, COLOR_PALM_LEAVES);
+                    display_set_pixel(4, ly, COLOR_PALM_LEAVES);
+                    display_set_pixel(1, ly + 1, COLOR_PALM_LEAVES);
+                    display_set_pixel(5, ly + 1, COLOR_PALM_LEAVES);
+                }
+                break;
+
+            case LANDMARK_PALM_RIGHT:
+                // Palm tree on right side
+                if (ly >= 0 && ly < SCREEN_HEIGHT - 10) {
+                    // Trunk
+                    for (int t = 0; t < 8; t++) {
+                        display_set_pixel(SCREEN_WIDTH - 4, ly + t, COLOR_PALM_TRUNK);
+                    }
+                    // Leaves
+                    display_set_pixel(SCREEN_WIDTH - 5, ly, COLOR_PALM_LEAVES);
+                    display_set_pixel(SCREEN_WIDTH - 4, ly, COLOR_PALM_LEAVES);
+                    display_set_pixel(SCREEN_WIDTH - 3, ly, COLOR_PALM_LEAVES);
+                    display_set_pixel(SCREEN_WIDTH - 6, ly + 1, COLOR_PALM_LEAVES);
+                    display_set_pixel(SCREEN_WIDTH - 2, ly + 1, COLOR_PALM_LEAVES);
+                }
+                break;
+
+            case LANDMARK_CONE:
+                // Traffic cone in middle of road
+                if (ly >= 0 && ly < SCREEN_HEIGHT - 5) {
+                    int cone_x = ROAD_START_X + ROAD_WIDTH / 2;
+                    display_set_pixel(cone_x, ly, COLOR_CONE_ORANGE);
+                    display_set_pixel(cone_x - 1, ly + 1, COLOR_CONE_ORANGE);
+                    display_set_pixel(cone_x, ly + 1, COLOR_CONE_ORANGE);
+                    display_set_pixel(cone_x + 1, ly + 1, COLOR_CONE_ORANGE);
+                    display_set_pixel(cone_x - 1, ly + 2, COLOR_CONE_ORANGE);
+                    display_set_pixel(cone_x, ly + 2, COLOR_CONE_ORANGE);
+                    display_set_pixel(cone_x + 1, ly + 2, COLOR_CONE_ORANGE);
+                }
+                break;
+        }
+    }
+}
+
+void game_render(void) {
+    // Clear screen
+    display_clear(COLOR_BLACK);
+
+    // Draw road with scrolling
+    draw_road(player.distance % 8);
+
+    // Draw landmarks
+    draw_landmarks();
+
+    // Draw bot cars
+    for (int i = 0; i < MAX_BOT_CARS; i++) {
+        draw_bot_car(&bot_cars[i]);
+    }
+
+    // Draw player car
+    draw_player_car();
+
+    // Draw score (top left)
+    char score_text[16];
+    uint32_t score = player.distance / 10;
+
+    // Simple integer to string (no sprintf on bare metal)
+    score_text[0] = 'D';
+    score_text[1] = ':';
+    score_text[2] = '0' + ((score / 1000) % 10);
+    score_text[3] = '0' + ((score / 100) % 10);
+    score_text[4] = '0' + ((score / 10) % 10);
+    score_text[5] = '0' + (score % 10);
+    score_text[6] = '\0';
+
+    display_draw_string(1, 1, score_text, COLOR_WHITE, COLOR_BLACK);
+
+    // Draw collision warning
+    if (player.collision_timer > 0) {
+        display_draw_string(20, 1, "HIT!", COLOR_RED, COLOR_BLACK);
+    }
+
+    // Draw boost indicator
+    if (player.boost_timer > 0) {
+        display_draw_string(45, 1, "GO!", COLOR_YELLOW, COLOR_BLACK);
+    }
+}
+
+int main(void) {
+    game_init();
+
+    // Main game loop
+    while (1) {
+        game_update();
+        game_render();
+
+        // Simple frame delay (adjust as needed)
+        for (volatile int i = 0; i < 50000; i++);
+    }
+
+    return 0;
+}
