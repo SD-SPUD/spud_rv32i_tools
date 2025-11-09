@@ -44,6 +44,7 @@ int main() {
         board_draw();
         game_draw_board(&game);
         game_draw_active_piece(&game);
+        game_draw_score(&game);
 
         // show game over message
         if (game.game_over) {

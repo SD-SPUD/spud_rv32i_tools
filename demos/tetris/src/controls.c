@@ -8,8 +8,8 @@ static uint32_t last_move_time = 0;
 static uint32_t last_drop_time = 0;
 static uint32_t frame_counter = 0;
 
-#define AUTO_DROP_SPEED 30     // frames between automatic drops
-#define SOFT_DROP_SPEED 3      // frames between drops when holding down
+#define AUTO_DROP_SPEED 5     // frames between automatic drops (faster!)
+#define SOFT_DROP_SPEED 2      // frames between drops when holding down
 #define MOVE_REPEAT_DELAY 10   // frames before auto-repeat starts
 
 void controls_init(void) {

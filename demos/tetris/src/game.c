@@ -2,6 +2,9 @@
 #include "controls.h"
 #include <stddef.h>
 
+// Forward declaration for helper function
+static void draw_digit(uint8_t x, uint8_t y, uint8_t digit, spud_color_t color);
+
 // Tetris piece definitions
 // Each piece has 4 rotation states
 // Pieces are defined as offsets from an anchor point [row_offset, col_offset]
@@ -321,6 +324,92 @@ void game_draw_active_piece(game_state_t* game) {
             uint8_t x = col * BLOCK_SIZE;
             uint8_t y = row * BLOCK_SIZE;
             display_fill_rect(x, y, BLOCK_SIZE, BLOCK_SIZE, color);
+        }
+    }
+}
+
+// Draw score display on the right side
+void game_draw_score(game_state_t* game) {
+    // Score area starts at x=42 (after the 40-pixel play field)
+    // We have 22 pixels of width to work with
+
+    // Draw "SCORE" label at top
+    uint8_t score_x = 42;
+
+    // Draw simple digits for score (we'll draw it vertically due to space)
+    // Extract digits from score
+    uint16_t score = game->score;
+    uint8_t digits[5];  // max 65535
+    uint8_t num_digits = 0;
+
+    if (score == 0) {
+        digits[0] = 0;
+        num_digits = 1;
+    } else {
+        uint16_t temp = score;
+        while (temp > 0) {
+            digits[num_digits++] = temp % 10;
+            temp /= 10;
+        }
+    }
+
+    // Draw digits as simple 3x5 pixel numbers (vertically stacked)
+    uint8_t y_pos = 10;
+
+    // Draw from most significant to least significant
+    for (int i = num_digits - 1; i >= 0; i--) {
+        draw_digit(score_x, y_pos, digits[i], COLOR_YELLOW);
+        y_pos += 6;  // 5 pixels tall + 1 pixel gap
+    }
+
+    // Draw "LNS" (lines) label lower down
+    uint16_t lines = game->lines_cleared;
+
+    // Draw lines count
+    uint8_t line_digits[5];
+    uint8_t num_line_digits = 0;
+
+    if (lines == 0) {
+        line_digits[0] = 0;
+        num_line_digits = 1;
+    } else {
+        uint16_t temp = lines;
+        while (temp > 0) {
+            line_digits[num_line_digits++] = temp % 10;
+            temp /= 10;
+        }
+    }
+
+    y_pos = 48;
+    for (int i = num_line_digits - 1; i >= 0; i--) {
+        draw_digit(score_x, y_pos, line_digits[i], COLOR_CYAN);
+        y_pos += 6;
+    }
+}
+
+// Helper function to draw a simple 3x5 digit
+static void draw_digit(uint8_t x, uint8_t y, uint8_t digit, spud_color_t color) {
+    // Simple 3x5 pixel patterns for digits 0-9
+    static const uint8_t digit_patterns[10][5] = {
+        {0b111, 0b101, 0b101, 0b101, 0b111},  // 0
+        {0b010, 0b110, 0b010, 0b010, 0b111},  // 1
+        {0b111, 0b001, 0b111, 0b100, 0b111},  // 2
+        {0b111, 0b001, 0b111, 0b001, 0b111},  // 3
+        {0b101, 0b101, 0b111, 0b001, 0b001},  // 4
+        {0b111, 0b100, 0b111, 0b001, 0b111},  // 5
+        {0b111, 0b100, 0b111, 0b101, 0b111},  // 6
+        {0b111, 0b001, 0b001, 0b001, 0b001},  // 7
+        {0b111, 0b101, 0b111, 0b101, 0b111},  // 8
+        {0b111, 0b101, 0b111, 0b001, 0b111}   // 9
+    };
+
+    if (digit > 9) return;
+
+    for (uint8_t row = 0; row < 5; row++) {
+        for (uint8_t col = 0; col < 3; col++) {
+            if (digit_patterns[digit][row] & (1 << (2 - col))) {
+                display_set_pixel(x + col, y + row, color);
+            }
         }
     }
 }

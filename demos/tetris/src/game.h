@@ -78,4 +78,7 @@ void game_clear_lines(game_state_t* game);
 // returns array of 4 offsets from piece anchor
 void game_get_piece_blocks(piece_type_t type, rotation_t rotation, int8_t offsets[4][2]);
 
+// draw score display on the right side
+void game_draw_score(game_state_t* game);
+
 #endif // TETRIS_GAME_H
