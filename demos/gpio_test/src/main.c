@@ -1,6 +1,6 @@
 #include "spudkit.h"
 
-int main() {
+int gpio_test_main() {
     // initialize spudkit library
     spudkit_init();
 

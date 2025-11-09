@@ -2,6 +2,7 @@
 
 void game_init(game_state_t* game) {
     game->gameOver = false;
+    game->exitToMenu = false;
     game->dir = DIR_STOP;
 
     // center the starting position of the snake

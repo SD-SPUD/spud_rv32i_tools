@@ -30,6 +30,7 @@ typedef struct {
     int nTail;          // number of tail segments
     direction_t dir;    // current direction
     bool gameOver;      // game over flag
+    bool exitToMenu;    // exit to menu flag (set by SELECT button)
 } game_state_t;
 
 // game functions

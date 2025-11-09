@@ -1,6 +1,6 @@
 #include "spudkit.h"
 
-int main() {
+int hello_world_main() {
     // initialize spudkit library
     spudkit_init();
 

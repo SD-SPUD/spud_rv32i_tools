@@ -42,6 +42,11 @@ void controls_update(game_state_t* game) {
         game_init(game);
     }
 
+    // SELECT button exits to menu
+    if (button_pressed & (1 << ARCADE_BUTTON_SELECT)) {
+        game->exitToMenu = true;
+    }
+
     last_buttons = buttons;
 
     // check for UART input (WASD)

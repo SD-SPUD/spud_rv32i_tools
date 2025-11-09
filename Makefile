@@ -34,6 +34,9 @@ DEFAULT_DEMO = hello_world
 # Available demos (auto-detected from demos/ directory)
 DEMOS = $(notdir $(wildcard demos/*))
 
+# Launcher games list
+LAUNCHER_GAMES = snake tetris chess spudman donut
+
 # Help message
 .PHONY: help
 help:
@@ -407,6 +410,109 @@ run:
 	fi; \
 	echo "Running $$DEMO on testbench..."; \
 	cd ../spud_riscv_soc/tb && ./build/test.x -f ../../spud_rv32i-tools/demos/$$DEMO/build/$$DEMO.elf -b 0x80000000
+
+# Special launcher target that combines multiple games
+.PHONY: launcher
+launcher:
+	@echo "Building launcher with games: $(LAUNCHER_GAMES)"
+	@mkdir -p demos/launcher/build
+
+	# Compile spudkit library files first
+	@echo "Building spudkit library..."
+	@mkdir -p spudkit/build
+	@for c_file in spudkit/src/*.c; do \
+		if [ -f "$$c_file" ]; then \
+			echo "Compiling $$c_file..."; \
+			$(CC) $(CFLAGS) -c $$c_file -o spudkit/build/$$(basename $$c_file .c).o; \
+		fi \
+	done
+
+	# Assemble shared startup code
+	@echo "Assembling shared startup code..."
+	@$(AS) $(ASFLAGS) spudkit/build-support/start.s -o spudkit/build/start.o
+
+	# Compile launcher files
+	@echo "Compiling launcher..."
+	@for c_file in demos/launcher/src/*.c; do \
+		if [ -f "$$c_file" ]; then \
+			echo "Compiling $$c_file..."; \
+			$(CC) $(CFLAGS) -Idemos/launcher/src -c $$c_file -o demos/launcher/build/$$(basename $$c_file .c).o; \
+		fi \
+	done
+
+	# Compile each game as a single relocatable object (to avoid symbol conflicts)
+	@echo "Compiling snake game..."
+	@mkdir -p demos/launcher/build/snake_objs
+	@for c_file in demos/snake/src/*.c; do \
+		if [ -f "$$c_file" ]; then \
+			$(CC) $(CFLAGS) -Idemos/snake/src -c $$c_file -o demos/launcher/build/snake_objs/$$(basename $$c_file .c).o; \
+		fi \
+	done
+	@$(LD) -m elf32lriscv -r demos/launcher/build/snake_objs/*.o -o demos/launcher/build/snake.o
+
+	@echo "Compiling tetris game..."
+	@mkdir -p demos/launcher/build/tetris_objs
+	@for c_file in demos/tetris/src/*.c; do \
+		if [ -f "$$c_file" ]; then \
+			$(CC) $(CFLAGS) -Idemos/tetris/src -c $$c_file -o demos/launcher/build/tetris_objs/$$(basename $$c_file .c).o; \
+		fi \
+	done
+	@$(LD) -m elf32lriscv -r demos/launcher/build/tetris_objs/*.o -o demos/launcher/build/tetris.o
+
+	@echo "Compiling chess game..."
+	@mkdir -p demos/launcher/build/chess_objs
+	@for c_file in demos/chess/src/*.c; do \
+		if [ -f "$$c_file" ]; then \
+			$(CC) $(CFLAGS) -Idemos/chess/src -c $$c_file -o demos/launcher/build/chess_objs/$$(basename $$c_file .c).o; \
+		fi \
+	done
+	@$(LD) -m elf32lriscv -r demos/launcher/build/chess_objs/*.o -o demos/launcher/build/chess.o
+
+	@echo "Compiling spudman game..."
+	@mkdir -p demos/launcher/build/spudman_objs
+	@for c_file in demos/spudman/src/*.c; do \
+		if [ -f "$$c_file" ]; then \
+			$(CC) $(CFLAGS) -Idemos/spudman/src -c $$c_file -o demos/launcher/build/spudman_objs/$$(basename $$c_file .c).o; \
+		fi \
+	done
+	@$(LD) -m elf32lriscv -r demos/launcher/build/spudman_objs/*.o -o demos/launcher/build/spudman.o
+
+	@echo "Compiling donut game..."
+	@mkdir -p demos/launcher/build/donut_objs
+	@for c_file in demos/donut/src/*.c; do \
+		if [ -f "$$c_file" ]; then \
+			$(CC) $(CFLAGS) -Idemos/donut/src -c $$c_file -o demos/launcher/build/donut_objs/$$(basename $$c_file .c).o; \
+		fi \
+	done
+	@$(LD) -m elf32lriscv -r demos/launcher/build/donut_objs/*.o -o demos/launcher/build/donut.o
+
+	# Link everything together
+	@echo "Linking launcher..."
+	@$(CC) $(LDFLAGS) -Wl,--allow-multiple-definition -T spudkit/build-support/rv32i.ld \
+		demos/launcher/build/main.o \
+		demos/launcher/build/menu.o \
+		demos/launcher/build/snake.o \
+		demos/launcher/build/tetris.o \
+		demos/launcher/build/chess.o \
+		demos/launcher/build/spudman.o \
+		demos/launcher/build/donut.o \
+		spudkit/build/*.o \
+		-o demos/launcher/build/launcher.elf
+
+	# Generate additional outputs
+	@echo "Generating disassembly..."
+	@$(OBJDUMP) -D demos/launcher/build/launcher.elf > demos/launcher/build/launcher.dis 2>&1 || \
+		(echo "Warning: Full disassembly failed, generating code-only disassembly..." && \
+		$(OBJDUMP) -d demos/launcher/build/launcher.elf > demos/launcher/build/launcher.dis 2>&1 || \
+		echo "Warning: Disassembly generation failed, skipping...")
+	@echo "Generating binary..."
+	@$(OBJCOPY) -O binary demos/launcher/build/launcher.elf demos/launcher/build/launcher.bin
+
+	@echo ""
+	@echo "Launcher built successfully!"
+	@echo "ELF file: demos/launcher/build/launcher.elf"
+	@echo "Binary:   demos/launcher/build/launcher.bin"
+	@echo "Disasm:   demos/launcher/build/launcher.dis"
 
 # Catch-all rule to ignore demo names when used as arguments to "run", "memory", etc.
 %:

@@ -3,16 +3,15 @@
 #include "game.h"
 #include "controls.h"
 
-int main() {
-    spudkit_init();
+int tetris_main() {
     uart_puts("welcome to tetris!\r\n");
 
-    game_state_t game;
-    game_init(&game);
+    tetris_game_state_t game;
+    tetris_game_init(&game);
 
-    board_init();
+    tetris_board_init();
 
-    controls_init();
+    tetris_controls_init();
 
     uart_puts("tetris game initialized\r\n");
     uart_puts("controls:\r\n");
@@ -21,30 +20,37 @@ int main() {
     uart_puts("  DOWN or S - soft drop (faster fall)\r\n");
     uart_puts("  B button or Enter - hard drop (instant)\r\n");
     uart_puts("  Y button - reset game\r\n");
+    uart_puts("  SELECT button - exit to menu\r\n");
 
     uint16_t last_buttons = arcade_read_all();
 
     while(1) {
+        // check if user wants to exit to menu
+        if (game.exitToMenu) {
+            uart_puts("exiting to menu...\r\n");
+            break;
+        }
+
         // check for Y button press (reset game)
         uint16_t buttons = arcade_read_all();
         uint16_t button_pressed = buttons & ~last_buttons;  // detect rising edge
 
         if (button_pressed & (1 << ARCADE_BUTTON_Y)) {
             // reset the game
-            game_init(&game);
+            tetris_game_init(&game);
             uart_puts("game reset!\r\n");
         }
 
         last_buttons = buttons;
 
         // update game logic
-        controls_update(&game);
+        tetris_controls_update(&game);
 
         // draw everything
-        board_draw();
-        game_draw_board(&game);
-        game_draw_active_piece(&game);
-        game_draw_score(&game);
+        tetris_board_draw();
+        tetris_game_draw_board(&game);
+        tetris_game_draw_active_piece(&game);
+        tetris_game_draw_score(&game);
 
         // show game over message
         if (game.game_over) {

@@ -11,7 +11,7 @@
 #define DARK_SQUARE_COLOR  COLOR_BLACK
 
 // board functions
-void board_init(void);
-void board_draw(void);
+void chess_board_init(void);
+void chess_board_draw(void);
 
 #endif // CHESS_BOARD_H

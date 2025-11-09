@@ -32,6 +32,11 @@ void controls_update(game_state_t* game) {
         }
     }
 
+    // SELECT button exits to menu
+    if (button_pressed & (1 << ARCADE_BUTTON_SELECT)) {
+        game->exitToMenu = true;
+    }
+
     last_buttons = buttons;
 
     // Check for UART keyboard input (A/D for left/right, Space for boost)

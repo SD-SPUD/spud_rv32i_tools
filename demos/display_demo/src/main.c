@@ -4,7 +4,7 @@
 
 #include "spudkit.h"
 
-int main() {
+int display_demo_main() {
     // initialize the spudkit library
     spudkit_init();
     sim_puts("\r\nSpudKit Display Demo\r\n");

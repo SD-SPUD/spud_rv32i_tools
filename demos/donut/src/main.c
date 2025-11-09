@@ -12,15 +12,28 @@
 #define K2 FFLOAT(80)  // distance from viewer
 #define K1 FFLOAT(60)  // screen scaling factor
 
-int main() {
+int donut_main() {
     // initialize the spudkit library
     spudkit_init();
     uart_puts("\r\nSpudKit DONUT Demo\r\n");
     uart_puts("===================\r\n\r\n");
+    uart_puts("Press SELECT button to exit to menu\r\n");
+
+    // Initialize arcade buttons
+    arcade_init();
+    uint16_t last_buttons = arcade_read_all();
 
     // seed random number generator with a simple value
     rand_seed(0x12345678);
     while(1) {
+        // Check for SELECT button press to exit
+        uint16_t buttons = arcade_read_all();
+        uint16_t button_pressed = buttons & ~last_buttons;
+        if (button_pressed & (1 << ARCADE_BUTTON_SELECT)) {
+            uart_puts("Exiting to menu...\r\n");
+            break;
+        }
+        last_buttons = buttons;
 
         static ffloat spin = 0;
         static ffloat spin2 = 0;

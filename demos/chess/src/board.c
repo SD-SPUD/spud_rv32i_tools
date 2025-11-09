@@ -1,10 +1,10 @@
 #include "board.h"
 
-void board_init(void) {
+void chess_board_init(void) {
     display_init();
 }
 
-void board_draw(void) {
+void chess_board_draw(void) {
     display_clear(COLOR_BLACK);
 
     for (uint8_t row = 0; row < BOARD_SIZE; row++) {

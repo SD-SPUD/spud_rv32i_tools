@@ -1,10 +1,10 @@
 #include "board.h"
 
-void board_init(void) {
+void tetris_board_init(void) {
     display_init();
 }
 
-void board_draw(void) {
+void tetris_board_draw(void) {
     // Clear the entire display
     display_clear(BACKGROUND_COLOR);
 

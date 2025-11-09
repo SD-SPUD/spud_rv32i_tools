@@ -119,7 +119,7 @@ void draw_static_elements() {
     display_draw_char(54, 35, 'B', COLOR_WHITE, COLOR_BLACK);  // B label
 }
 
-int main() {
+int arcade_display_main() {
     // Initialize spudkit library
     spudkit_init();
 

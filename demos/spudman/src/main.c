@@ -2,11 +2,7 @@
 #include "game.h"
 #include "controls.h"
 
-int main(void) {
-    // Initialize SpudKit
-    spudkit_init();
-    display_init();
-
+int spudman_main(void) {
     uart_puts("\r\n");
     uart_puts("=========================================\r\n");
     uart_puts("              SPUDMAN! 🥔👻              \r\n");
@@ -17,7 +13,7 @@ int main(void) {
     uart_puts("Controls:\r\n");
     uart_puts("  Arcade: UP/DOWN/LEFT/RIGHT buttons\r\n");
     uart_puts("  Keyboard: W/A/S/D keys\r\n");
-    uart_puts("  Q - Quit\r\n");
+    uart_puts("  SELECT - Exit to menu\r\n");
     uart_puts("\r\n");
     uart_puts("Rules:\r\n");
     uart_puts("  - Eat all green sprouts (pellets)\r\n");
@@ -30,21 +26,27 @@ int main(void) {
 
     // Initialize game
     game_state_t game;
-    game_init(&game);
+    spudman_game_init(&game);
 
-    controls_init();
+    spudman_controls_init();
 
     // Main game loop
     while (1) {
+        // Check if user wants to exit to menu
+        if (game.exitToMenu) {
+            uart_puts("exiting to menu...\r\n");
+            break;
+        }
+
         // Handle input
-        controls_update(&game);
+        spudman_controls_update(&game);
 
         // Update game logic
-        game_update(&game);
+        spudman_game_update(&game);
 
         // Render frame
         display_clear(COLOR_BLACK);
-        game_draw(&game);
+        spudman_game_draw(&game);
         display_update();
 
         // Frame delay

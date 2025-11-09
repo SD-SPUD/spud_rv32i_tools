@@ -4,17 +4,17 @@
 static uint16_t last_buttons = 0;
 
 // helper function to attempt picking up a piece
-static void try_pickup_piece(cursor_t* cursor, game_state_t* game) {
-    chess_piece_t piece = game_get_piece(game, cursor->row, cursor->col);
+static void try_pickup_piece(chess_cursor_t* cursor, chess_game_state_t* game) {
+    chess_piece_t piece = chess_game_get_piece(game, cursor->row, cursor->col);
 
     // make sure we have a piece
-    if (piece.type == PIECE_NONE) {
+    if (piece.type == CHESS_PIECE_NONE) {
         return;
     }
 
     // check the color matches the current turn
-    if ((game->turn == WHITE_TURN && piece.color != COLOR_WHITE_PIECE) ||
-        (game->turn == BLACK_TURN && piece.color != COLOR_BLACK_PIECE)) {
+    if ((game->turn == WHITE_TURN && piece.color != CHESS_COLOR_WHITE_PIECE) ||
+        (game->turn == BLACK_TURN && piece.color != CHESS_COLOR_BLACK_PIECE)) {
         return;
     }
 
@@ -25,17 +25,17 @@ static void try_pickup_piece(cursor_t* cursor, game_state_t* game) {
 }
 
 // helper function to attempt dropping a piece
-static void try_drop_piece(cursor_t* cursor, game_state_t* game) {
+static void try_drop_piece(chess_cursor_t* cursor, chess_game_state_t* game) {
     // validate move before dropping
-    if (is_valid_move(cursor, game)) {
+    if (chess_is_valid_move(cursor, game)) {
         // get the piece from the held position
-        chess_piece_t piece = game_get_piece(game, cursor->held_piece_row, cursor->held_piece_col);
+        chess_piece_t piece = chess_game_get_piece(game, cursor->held_piece_row, cursor->held_piece_col);
 
         // mark piece as moved
         piece.is_first_move = false;
 
         // move the piece
-        game_set_piece(game, cursor->held_piece_row, cursor->held_piece_col, PIECE_NONE, COLOR_NONE);
+        chess_game_set_piece(game, cursor->held_piece_row, cursor->held_piece_col, CHESS_PIECE_NONE, CHESS_COLOR_NONE);
         game->board[cursor->row][cursor->col] = piece;
 
         cursor->is_holding_piece = 0;
@@ -48,7 +48,7 @@ static void try_drop_piece(cursor_t* cursor, game_state_t* game) {
 }
 
 // helper function to handle select action (pickup or drop)
-static void handle_select_action(cursor_t* cursor, game_state_t* game) {
+static void handle_select_action(chess_cursor_t* cursor, chess_game_state_t* game) {
     if (!cursor->is_holding_piece) {
         try_pickup_piece(cursor, game);
     } else {
@@ -64,7 +64,7 @@ static void handle_select_action(cursor_t* cursor, game_state_t* game) {
 }
 
 // helper function to move cursor
-static void move_cursor(cursor_t* cursor, int8_t row_delta, int8_t col_delta) {
+static void move_cursor(chess_cursor_t* cursor, int8_t row_delta, int8_t col_delta) {
     int8_t new_row = cursor->row + row_delta;
     int8_t new_col = cursor->col + col_delta;
 
@@ -72,7 +72,7 @@ static void move_cursor(cursor_t* cursor, int8_t row_delta, int8_t col_delta) {
     if (new_col >= 0 && new_col < 8) cursor->col = new_col;
 }
 
-void controls_init(cursor_t* cursor, spud_color_t box_color) {
+void chess_controls_init(chess_cursor_t* cursor, spud_color_t box_color) {
     cursor->row = 0;
     cursor->col = 0;
     cursor->box_color = box_color;
@@ -86,7 +86,7 @@ void controls_init(cursor_t* cursor, spud_color_t box_color) {
     last_buttons = arcade_read_all();
 }
 
-void controls_update(cursor_t* cursor, game_state_t* game) {
+void chess_controls_update(chess_cursor_t* cursor, chess_game_state_t* game) {
     // read arcade buttons
     uint16_t buttons = arcade_read_all();
     uint16_t button_pressed = buttons & ~last_buttons;  // detect rising edge
@@ -116,6 +116,11 @@ void controls_update(cursor_t* cursor, game_state_t* game) {
     }
     if (button_pressed & (1 << ARCADE_BUTTON_RIGHT)) {
         move_cursor(cursor, 0, 1);
+    }
+
+    // SELECT button exits to menu
+    if (button_pressed & (1 << ARCADE_BUTTON_SELECT)) {
+        game->exitToMenu = true;
     }
 
     last_buttons = buttons;
@@ -156,7 +161,7 @@ void controls_update(cursor_t* cursor, game_state_t* game) {
     }
 }
 
-void controls_draw_cursor(cursor_t* cursor) {
+void chess_controls_draw_cursor(chess_cursor_t* cursor) {
     uint8_t x = cursor->col * SQUARE_SIZE;
     uint8_t y = cursor->row * SQUARE_SIZE;
 
@@ -182,7 +187,7 @@ void controls_draw_cursor(cursor_t* cursor) {
     }
 }
 
-void controls_clear_cursor(cursor_t* cursor) {
+void chess_controls_clear_cursor(chess_cursor_t* cursor) {
     uint8_t x = cursor->col * SQUARE_SIZE;
     uint8_t y = cursor->row * SQUARE_SIZE;
 

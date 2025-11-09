@@ -92,6 +92,7 @@ typedef struct {
     bot_car_t bot_cars[MAX_BOT_CARS];
     landmark_t landmarks[MAX_LANDMARKS];
     uint8_t spawn_timer;
+    bool exitToMenu;  // exit to menu flag (set by SELECT button)
 } game_state_t;
 
 // Initialize game state

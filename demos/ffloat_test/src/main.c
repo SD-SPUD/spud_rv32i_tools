@@ -308,7 +308,7 @@ void show_constants() {
     uart_puts("\r\n");
 }
 
-int main() {
+int ffloat_test_main() {
     spudkit_init();
     uart_puts("\r\nFFLoat Test Suite\r\n");
     uart_puts("==================\r\n");

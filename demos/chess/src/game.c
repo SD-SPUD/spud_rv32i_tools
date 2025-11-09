@@ -78,73 +78,74 @@ static const uint8_t king_pattern[8][8] = {
 };
 
 // helper function to get pattern for piece type
-static const uint8_t (*get_piece_pattern(piece_type_t type))[8] {
+static const uint8_t (*get_piece_pattern(chess_piece_type_t type))[8] {
     switch(type) {
-        case PIECE_PAWN:   return pawn_pattern;
-        case PIECE_ROOK:   return rook_pattern;
-        case PIECE_KNIGHT: return knight_pattern;
-        case PIECE_BISHOP: return bishop_pattern;
-        case PIECE_QUEEN:  return queen_pattern;
-        case PIECE_KING:   return king_pattern;
+        case CHESS_PIECE_PAWN:   return pawn_pattern;
+        case CHESS_PIECE_ROOK:   return rook_pattern;
+        case CHESS_PIECE_KNIGHT: return knight_pattern;
+        case CHESS_PIECE_BISHOP: return bishop_pattern;
+        case CHESS_PIECE_QUEEN:  return queen_pattern;
+        case CHESS_PIECE_KING:   return king_pattern;
         default:           return NULL;
     }
 }
 
-void game_init(game_state_t* game) {
+void chess_game_init(chess_game_state_t* game) {
     // initialize turn - white goes first
     game->turn = WHITE_TURN;
+    game->exitToMenu = false;
 
     // clear the board
     for (uint8_t row = 0; row < 8; row++) {
         for (uint8_t col = 0; col < 8; col++) {
-            game->board[row][col].type = PIECE_NONE;
-            game->board[row][col].color = COLOR_NONE;
+            game->board[row][col].type = CHESS_PIECE_NONE;
+            game->board[row][col].color = CHESS_COLOR_NONE;
             game->board[row][col].is_first_move = true;
         }
     }
 
     // set up initial chess position
     // black pieces (top, row 0-1)
-    game->board[0][0] = (chess_piece_t){PIECE_ROOK, COLOR_BLACK_PIECE, true};
-    game->board[0][1] = (chess_piece_t){PIECE_KNIGHT, COLOR_BLACK_PIECE, true};
-    game->board[0][2] = (chess_piece_t){PIECE_BISHOP, COLOR_BLACK_PIECE, true};
-    game->board[0][3] = (chess_piece_t){PIECE_QUEEN, COLOR_BLACK_PIECE, true};
-    game->board[0][4] = (chess_piece_t){PIECE_KING, COLOR_BLACK_PIECE, true};
-    game->board[0][5] = (chess_piece_t){PIECE_BISHOP, COLOR_BLACK_PIECE, true};
-    game->board[0][6] = (chess_piece_t){PIECE_KNIGHT, COLOR_BLACK_PIECE, true};
-    game->board[0][7] = (chess_piece_t){PIECE_ROOK, COLOR_BLACK_PIECE, true};
+    game->board[0][0] = (chess_piece_t){CHESS_PIECE_ROOK, CHESS_COLOR_BLACK_PIECE, true};
+    game->board[0][1] = (chess_piece_t){CHESS_PIECE_KNIGHT, CHESS_COLOR_BLACK_PIECE, true};
+    game->board[0][2] = (chess_piece_t){CHESS_PIECE_BISHOP, CHESS_COLOR_BLACK_PIECE, true};
+    game->board[0][3] = (chess_piece_t){CHESS_PIECE_QUEEN, CHESS_COLOR_BLACK_PIECE, true};
+    game->board[0][4] = (chess_piece_t){CHESS_PIECE_KING, CHESS_COLOR_BLACK_PIECE, true};
+    game->board[0][5] = (chess_piece_t){CHESS_PIECE_BISHOP, CHESS_COLOR_BLACK_PIECE, true};
+    game->board[0][6] = (chess_piece_t){CHESS_PIECE_KNIGHT, CHESS_COLOR_BLACK_PIECE, true};
+    game->board[0][7] = (chess_piece_t){CHESS_PIECE_ROOK, CHESS_COLOR_BLACK_PIECE, true};
 
     // black pawns
     for (uint8_t col = 0; col < 8; col++) {
-        game->board[1][col] = (chess_piece_t){PIECE_PAWN, COLOR_BLACK_PIECE, true};
+        game->board[1][col] = (chess_piece_t){CHESS_PIECE_PAWN, CHESS_COLOR_BLACK_PIECE, true};
     }
 
     // white pawns
     for (uint8_t col = 0; col < 8; col++) {
-        game->board[6][col] = (chess_piece_t){PIECE_PAWN, COLOR_WHITE_PIECE, true};
+        game->board[6][col] = (chess_piece_t){CHESS_PIECE_PAWN, CHESS_COLOR_WHITE_PIECE, true};
     }
 
     // white pieces (bottom, row 7)
-    game->board[7][0] = (chess_piece_t){PIECE_ROOK, COLOR_WHITE_PIECE, true};
-    game->board[7][1] = (chess_piece_t){PIECE_KNIGHT, COLOR_WHITE_PIECE, true};
-    game->board[7][2] = (chess_piece_t){PIECE_BISHOP, COLOR_WHITE_PIECE, true};
-    game->board[7][3] = (chess_piece_t){PIECE_QUEEN, COLOR_WHITE_PIECE, true};
-    game->board[7][4] = (chess_piece_t){PIECE_KING, COLOR_WHITE_PIECE, true};
-    game->board[7][5] = (chess_piece_t){PIECE_BISHOP, COLOR_WHITE_PIECE, true};
-    game->board[7][6] = (chess_piece_t){PIECE_KNIGHT, COLOR_WHITE_PIECE, true};
-    game->board[7][7] = (chess_piece_t){PIECE_ROOK, COLOR_WHITE_PIECE, true};
+    game->board[7][0] = (chess_piece_t){CHESS_PIECE_ROOK, CHESS_COLOR_WHITE_PIECE, true};
+    game->board[7][1] = (chess_piece_t){CHESS_PIECE_KNIGHT, CHESS_COLOR_WHITE_PIECE, true};
+    game->board[7][2] = (chess_piece_t){CHESS_PIECE_BISHOP, CHESS_COLOR_WHITE_PIECE, true};
+    game->board[7][3] = (chess_piece_t){CHESS_PIECE_QUEEN, CHESS_COLOR_WHITE_PIECE, true};
+    game->board[7][4] = (chess_piece_t){CHESS_PIECE_KING, CHESS_COLOR_WHITE_PIECE, true};
+    game->board[7][5] = (chess_piece_t){CHESS_PIECE_BISHOP, CHESS_COLOR_WHITE_PIECE, true};
+    game->board[7][6] = (chess_piece_t){CHESS_PIECE_KNIGHT, CHESS_COLOR_WHITE_PIECE, true};
+    game->board[7][7] = (chess_piece_t){CHESS_PIECE_ROOK, CHESS_COLOR_WHITE_PIECE, true};
 }
 
-void game_draw_pieces(game_state_t* game) {
+void chess_game_draw_pieces(chess_game_state_t* game) {
     for (uint8_t row = 0; row < 8; row++) {
         for (uint8_t col = 0; col < 8; col++) {
             chess_piece_t piece = game->board[row][col];
 
-            if (piece.type != PIECE_NONE) {
+            if (piece.type != CHESS_PIECE_NONE) {
                 const uint8_t (*pattern)[8] = get_piece_pattern(piece.type);
                 if (pattern) {
                     // determine piece color
-                    spud_color_t piece_color = (piece.color == COLOR_WHITE_PIECE) ?
+                    spud_color_t piece_color = (piece.color == CHESS_COLOR_WHITE_PIECE) ?
                                                WHITE_PIECE_COLOR : BLACK_PIECE_COLOR;
 
                     // draw the piece pattern
@@ -163,15 +164,15 @@ void game_draw_pieces(game_state_t* game) {
     }
 }
 
-void game_set_piece(game_state_t* game, uint8_t row, uint8_t col, piece_type_t type, piece_color_t color) {
+void chess_game_set_piece(chess_game_state_t* game, uint8_t row, uint8_t col, chess_piece_type_t type, chess_piece_color_t color) {
     if (row < 8 && col < 8) {
         game->board[row][col].type = type;
         game->board[row][col].color = color;
     }
 }
 
-chess_piece_t game_get_piece(game_state_t* game, uint8_t row, uint8_t col) {
-    chess_piece_t empty = {PIECE_NONE, COLOR_NONE, false};
+chess_piece_t chess_game_get_piece(chess_game_state_t* game, uint8_t row, uint8_t col) {
+    chess_piece_t empty = {CHESS_PIECE_NONE, CHESS_COLOR_NONE, false};
     if (row < 8 && col < 8) {
         return game->board[row][col];
     }
@@ -179,7 +180,7 @@ chess_piece_t game_get_piece(game_state_t* game, uint8_t row, uint8_t col) {
 }
 
 // check if the piece is valid on cursor
-bool is_valid_move(cursor_t* cursor, game_state_t* game){
+bool chess_is_valid_move(chess_cursor_t* cursor, chess_game_state_t* game){
     chess_piece_t* piece = &game->board[cursor->held_piece_row][cursor->held_piece_col];
 
     int row_diff = cursor->row - cursor->held_piece_row;
@@ -188,14 +189,14 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
     if(col_diff == 0 && row_diff == 0) return false;
 
     // white moves up (negative row_diff), black moves down (positive row_diff)
-    int direction = (piece->color == COLOR_WHITE_PIECE) ? -1 : 1;
+    int direction = (piece->color == CHESS_COLOR_WHITE_PIECE) ? -1 : 1;
 
 
     // TODO: check if move put king in check
 
     // check each piece
     switch (piece->type) {
-    case PIECE_PAWN:
+    case CHESS_PIECE_PAWN:
     {
         // check if moving in correct direction
         if (row_diff * direction <= 0) return false;
@@ -203,7 +204,7 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
         // moving straight forward
         if (col_diff == 0) {
             // destination must be empty
-            if (game->board[cursor->row][cursor->col].type != PIECE_NONE) return false;
+            if (game->board[cursor->row][cursor->col].type != CHESS_PIECE_NONE) return false;
 
             // can move 1 or 2 squares on first move, otherwise only 1
             int max_move = piece->is_first_move ? 2 : 1;
@@ -216,13 +217,13 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
 
             // must capture an enemy piece
             chess_piece_t target = game->board[cursor->row][cursor->col];
-            if (target.type == PIECE_NONE || target.color == piece->color) return false;
+            if (target.type == CHESS_PIECE_NONE || target.color == piece->color) return false;
         } else {
             return false;
         }
     }
     break;
-    case PIECE_ROOK:
+    case CHESS_PIECE_ROOK:
     {
         // rook moves horizontally or vertically
         if (row_diff != 0 && col_diff != 0) return false;
@@ -237,17 +238,17 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
 
         // check all squares between start and destination
         while (check_row != cursor->row || check_col != cursor->col) {
-            if (game->board[check_row][check_col].type != PIECE_NONE) return false;
+            if (game->board[check_row][check_col].type != CHESS_PIECE_NONE) return false;
             check_row += step_row;
             check_col += step_col;
         }
 
         // destination must be empty or contain enemy piece
         chess_piece_t target = game->board[cursor->row][cursor->col];
-        if (target.type != PIECE_NONE && target.color == piece->color) return false;
+        if (target.type != CHESS_PIECE_NONE && target.color == piece->color) return false;
     }
     break;
-    case PIECE_KNIGHT:
+    case CHESS_PIECE_KNIGHT:
     {
         // knight moves in L shape: 2 squares in one direction, 1 in perpendicular
         int abs_row = (row_diff > 0) ? row_diff : -row_diff;
@@ -258,10 +259,10 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
 
         // destination must be empty or contain enemy piece
         chess_piece_t target = game->board[cursor->row][cursor->col];
-        if (target.type != PIECE_NONE && target.color == piece->color) return false;
+        if (target.type != CHESS_PIECE_NONE && target.color == piece->color) return false;
     }
     break;
-    case PIECE_BISHOP:
+    case CHESS_PIECE_BISHOP:
     {
         // bishop moves diagonally
         int abs_row = (row_diff > 0) ? row_diff : -row_diff;
@@ -279,17 +280,17 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
 
         // check all squares between start and destination
         while (check_row != cursor->row || check_col != cursor->col) {
-            if (game->board[check_row][check_col].type != PIECE_NONE) return false;
+            if (game->board[check_row][check_col].type != CHESS_PIECE_NONE) return false;
             check_row += step_row;
             check_col += step_col;
         }
 
         // destination must be empty or contain enemy piece
         chess_piece_t target = game->board[cursor->row][cursor->col];
-        if (target.type != PIECE_NONE && target.color == piece->color) return false;
+        if (target.type != CHESS_PIECE_NONE && target.color == piece->color) return false;
     }
     break;
-    case PIECE_QUEEN:
+    case CHESS_PIECE_QUEEN:
     {
         // queen moves like rook or bishop (horizontally, vertically, or diagonally)
         int abs_row = (row_diff > 0) ? row_diff : -row_diff;
@@ -307,17 +308,17 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
 
         // check all squares between start and destination
         while (check_row != cursor->row || check_col != cursor->col) {
-            if (game->board[check_row][check_col].type != PIECE_NONE) return false;
+            if (game->board[check_row][check_col].type != CHESS_PIECE_NONE) return false;
             check_row += step_row;
             check_col += step_col;
         }
 
         // destination must be empty or contain enemy piece
         chess_piece_t target = game->board[cursor->row][cursor->col];
-        if (target.type != PIECE_NONE && target.color == piece->color) return false;
+        if (target.type != CHESS_PIECE_NONE && target.color == piece->color) return false;
     }
     break;
-    case PIECE_KING:
+    case CHESS_PIECE_KING:
     {
         // king moves one square in any direction
         int abs_row = (row_diff > 0) ? row_diff : -row_diff;
@@ -328,10 +329,10 @@ bool is_valid_move(cursor_t* cursor, game_state_t* game){
 
         // destination must be empty or contain enemy piece
         chess_piece_t target = game->board[cursor->row][cursor->col];
-        if (target.type != PIECE_NONE && target.color == piece->color) return false;
+        if (target.type != CHESS_PIECE_NONE && target.color == piece->color) return false;
     }
     break;
-    case PIECE_NONE:
+    case CHESS_PIECE_NONE:
         // no piece to move
         return false;
 

@@ -6,7 +6,7 @@ void sleepx(int x){
     }
 }
 
-int main() {
+int led_test_main() {
     // initialize the spudkit library
     spudkit_init();
     volatile uint32_t* led_ctrl = (volatile uint32_t*)0x95000000;

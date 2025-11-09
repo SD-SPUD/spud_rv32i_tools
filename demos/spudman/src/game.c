@@ -56,9 +56,10 @@ static const uint8_t ghost_sprite[TILE_SIZE][TILE_SIZE] = {
     {1,0,1,0}
 };
 
-void game_init(game_state_t* game) {
+void spudman_game_init(game_state_t* game) {
     // Copy initial maze
     game->pellets_remaining = 0;
+    game->exitToMenu = false;
     for (int y = 0; y < MAZE_HEIGHT; y++) {
         for (int x = 0; x < MAZE_WIDTH; x++) {
             game->maze[y][x] = initial_maze[y][x];
@@ -106,20 +107,20 @@ void game_init(game_state_t* game) {
     game->game_state = GAME_STATE_HOME;  // Start at home screen
 }
 
-void game_reset(game_state_t* game) {
+void spudman_game_reset(game_state_t* game) {
     // Reset game to playing state (used when pressing reset button)
-    game_init(game);
+    spudman_game_init(game);
     game->game_state = GAME_STATE_PLAYING;
 }
 
-uint8_t game_can_move(game_state_t* game, int8_t x, int8_t y) {
+uint8_t spudman_game_can_move(game_state_t* game, int8_t x, int8_t y) {
     if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT) {
         return 0;
     }
     return game->maze[y][x] != TILE_WALL;
 }
 
-void game_update_spudman(game_state_t* game) {
+void spudman_game_update_spudman(game_state_t* game) {
     spudman_t* sp = &game->spudman;
 
     // Try to change direction if queued
@@ -134,7 +135,7 @@ void game_update_spudman(game_state_t* game) {
             case DIR_RIGHT: next_x++; break;
         }
 
-        if (game_can_move(game, next_x, next_y)) {
+        if (spudman_game_can_move(game, next_x, next_y)) {
             sp->direction = sp->next_direction;
             sp->next_direction = DIR_NONE;
         }
@@ -165,7 +166,7 @@ void game_update_spudman(game_state_t* game) {
             new_y = 0;
         }
 
-        if (game_can_move(game, new_x, new_y)) {
+        if (spudman_game_can_move(game, new_x, new_y)) {
             sp->x = new_x;
             sp->y = new_y;
             sp->pixel_x = sp->x * TILE_SIZE;
@@ -194,7 +195,7 @@ void game_update_spudman(game_state_t* game) {
     }
 }
 
-void game_update_ghosts(game_state_t* game) {
+void spudman_game_update_ghosts(game_state_t* game) {
     // Simple ghost AI: move towards spudman (only update every 3 frames for faster movement)
     if (game->frame_count % 3 != 0) {
         return;
@@ -226,19 +227,19 @@ void game_update_ghosts(game_state_t* game) {
 
         // Right
         test_x = (ghost->x + 1) >= MAZE_WIDTH ? 0 : (ghost->x + 1);
-        if (dx > 0 && game_can_move(game, test_x, ghost->y)) directions[count++] = DIR_RIGHT;
+        if (dx > 0 && spudman_game_can_move(game, test_x, ghost->y)) directions[count++] = DIR_RIGHT;
 
         // Left
         test_x = (ghost->x - 1) < 0 ? MAZE_WIDTH - 1 : (ghost->x - 1);
-        if (dx < 0 && game_can_move(game, test_x, ghost->y)) directions[count++] = DIR_LEFT;
+        if (dx < 0 && spudman_game_can_move(game, test_x, ghost->y)) directions[count++] = DIR_LEFT;
 
         // Down
         test_y = (ghost->y + 1) >= MAZE_HEIGHT ? 0 : (ghost->y + 1);
-        if (dy > 0 && game_can_move(game, ghost->x, test_y)) directions[count++] = DIR_DOWN;
+        if (dy > 0 && spudman_game_can_move(game, ghost->x, test_y)) directions[count++] = DIR_DOWN;
 
         // Up
         test_y = (ghost->y - 1) < 0 ? MAZE_HEIGHT - 1 : (ghost->y - 1);
-        if (dy < 0 && game_can_move(game, ghost->x, test_y)) directions[count++] = DIR_UP;
+        if (dy < 0 && spudman_game_can_move(game, ghost->x, test_y)) directions[count++] = DIR_UP;
 
         // Pick random valid direction if any
         if (count > 0) {
@@ -288,7 +289,7 @@ void game_update_ghosts(game_state_t* game) {
     }
 }
 
-void game_check_collisions(game_state_t* game) {
+void spudman_game_check_collisions(game_state_t* game) {
     for (int i = 0; i < MAX_GHOSTS; i++) {
         ghost_t* ghost = &game->ghosts[i];
 
@@ -324,15 +325,15 @@ void game_check_collisions(game_state_t* game) {
     }
 }
 
-void game_update(game_state_t* game) {
+void spudman_game_update(game_state_t* game) {
     // Only update if playing
     if (game->game_state != GAME_STATE_PLAYING) {
         return;
     }
 
-    game_update_spudman(game);
-    game_update_ghosts(game);
-    game_check_collisions(game);
+    spudman_game_update_spudman(game);
+    spudman_game_update_ghosts(game);
+    spudman_game_check_collisions(game);
 
     // Update power timer
     if (game->power_timer > 0) {
@@ -351,14 +352,14 @@ void game_update(game_state_t* game) {
     // Check for level complete
     if (game->pellets_remaining == 0) {
         uart_puts("Level complete!\r\n");
-        game_init(game);  // Restart level
+        spudman_game_init(game);  // Restart level
         game->lives++;  // Bonus life!
     }
 
     game->frame_count++;
 }
 
-void game_draw_maze(game_state_t* game) {
+void spudman_game_draw_maze(game_state_t* game) {
     for (int y = 0; y < MAZE_HEIGHT; y++) {
         for (int x = 0; x < MAZE_WIDTH; x++) {
             int px = x * TILE_SIZE;
@@ -382,7 +383,7 @@ void game_draw_maze(game_state_t* game) {
     }
 }
 
-void game_draw_spudman(game_state_t* game) {
+void spudman_game_draw_spudman(game_state_t* game) {
     spudman_t* sp = &game->spudman;
 
     spud_color_t colors[5] = {
@@ -403,7 +404,7 @@ void game_draw_spudman(game_state_t* game) {
     }
 }
 
-void game_draw_ghosts(game_state_t* game) {
+void spudman_game_draw_ghosts(game_state_t* game) {
     for (int i = 0; i < MAX_GHOSTS; i++) {
         ghost_t* ghost = &game->ghosts[i];
 
@@ -430,7 +431,7 @@ void game_draw_ghosts(game_state_t* game) {
     }
 }
 
-void game_draw_home_screen(void) {
+void spudman_game_draw_home_screen(void) {
     // Clear screen
     display_clear(COLOR_BACKGROUND);
 
@@ -468,7 +469,7 @@ void game_draw_home_screen(void) {
     display_draw_string_small(12, 56, "to start", COLOR_WHITE, COLOR_BACKGROUND);
 }
 
-void game_draw_game_over(game_state_t* game) {
+void spudman_game_draw_game_over(game_state_t* game) {
     // Clear screen
     display_clear(COLOR_BACKGROUND);
 
@@ -495,20 +496,20 @@ void game_draw_game_over(game_state_t* game) {
     display_draw_string_small(8, 58, "for menu", COLOR_WHITE, COLOR_BACKGROUND);
 }
 
-void game_draw(game_state_t* game) {
+void spudman_game_draw(game_state_t* game) {
     if (game->game_state == GAME_STATE_HOME) {
-        game_draw_home_screen();
+        spudman_game_draw_home_screen();
     } else if (game->game_state == GAME_STATE_GAME_OVER) {
-        game_draw_game_over(game);
+        spudman_game_draw_game_over(game);
     } else {
         // Draw maze and pellets
-        game_draw_maze(game);
+        spudman_game_draw_maze(game);
 
         // Draw ghosts
-        game_draw_ghosts(game);
+        spudman_game_draw_ghosts(game);
 
         // Draw spudman (on top)
-        game_draw_spudman(game);
+        spudman_game_draw_spudman(game);
 
         // Draw HUD - score and lives (in unused space or at bottom)
         // For now, we'll use the maze itself as display area

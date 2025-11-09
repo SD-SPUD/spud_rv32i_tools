@@ -2,36 +2,36 @@
 #include "controls.h"
 
 // helper function to get piece value
-static int get_piece_value(piece_type_t type) {
+static int get_piece_value(chess_piece_type_t type) {
     switch (type) {
-        case PIECE_PAWN:   return PAWN_VALUE;
-        case PIECE_KNIGHT: return KNIGHT_VALUE;
-        case PIECE_BISHOP: return BISHOP_VALUE;
-        case PIECE_ROOK:   return ROOK_VALUE;
-        case PIECE_QUEEN:  return QUEEN_VALUE;
-        case PIECE_KING:   return KING_VALUE;
+        case CHESS_PIECE_PAWN:   return PAWN_VALUE;
+        case CHESS_PIECE_KNIGHT: return KNIGHT_VALUE;
+        case CHESS_PIECE_BISHOP: return BISHOP_VALUE;
+        case CHESS_PIECE_ROOK:   return ROOK_VALUE;
+        case CHESS_PIECE_QUEEN:  return QUEEN_VALUE;
+        case CHESS_PIECE_KING:   return KING_VALUE;
         default:           return 0;
     }
 }
 
 // helper function to get piece-square table value
-static int get_piece_square_value(piece_type_t type, uint8_t row, uint8_t col, piece_color_t color) {
+static int get_piece_square_value(chess_piece_type_t type, uint8_t row, uint8_t col, chess_piece_color_t color) {
     // for black pieces, mirror the row (flip vertically)
-    uint8_t table_row = (color == COLOR_BLACK_PIECE) ? (7 - row) : row;
+    uint8_t table_row = (color == CHESS_COLOR_BLACK_PIECE) ? (7 - row) : row;
 
     switch (type) {
-        case PIECE_PAWN:   return pawn_table[table_row][col];
-        case PIECE_KNIGHT: return knight_table[table_row][col];
-        case PIECE_BISHOP: return bishop_table[table_row][col];
-        case PIECE_ROOK:   return rook_table[table_row][col];
-        case PIECE_QUEEN:  return queen_table[table_row][col];
-        case PIECE_KING:   return king_table[table_row][col];
+        case CHESS_PIECE_PAWN:   return pawn_table[table_row][col];
+        case CHESS_PIECE_KNIGHT: return knight_table[table_row][col];
+        case CHESS_PIECE_BISHOP: return bishop_table[table_row][col];
+        case CHESS_PIECE_ROOK:   return rook_table[table_row][col];
+        case CHESS_PIECE_QUEEN:  return queen_table[table_row][col];
+        case CHESS_PIECE_KING:   return king_table[table_row][col];
         default:           return 0;
     }
 }
 
 // positive is for white and neg is for black
-int evaluate_position(game_state_t* game) {
+int chess_evaluate_position(chess_game_state_t* game) {
     int score = 0;
 
     // iterate through all squares
@@ -39,7 +39,7 @@ int evaluate_position(game_state_t* game) {
         for (uint8_t col = 0; col < 8; col++) {
             chess_piece_t piece = game->board[row][col];
 
-            if (piece.type == PIECE_NONE) {
+            if (piece.type == CHESS_PIECE_NONE) {
                 continue;
             }
 
@@ -53,7 +53,7 @@ int evaluate_position(game_state_t* game) {
             int total_value = piece_value + positional_value;
 
             // add to score (positive for white, negative for black)
-            if (piece.color == COLOR_WHITE_PIECE) {
+            if (piece.color == CHESS_COLOR_WHITE_PIECE) {
                 score += total_value;
             } else {
                 score -= total_value;
@@ -65,7 +65,7 @@ int evaluate_position(game_state_t* game) {
 }
 
 // draw eval bar on the left side of screen (only if X button is held)
-void draw_eval_bar(game_state_t* game) {
+void draw_eval_bar(chess_game_state_t* game) {
     // check if X button is being held (active low)
     uint16_t buttons = arcade_read_all();
     uint8_t x_button_held = (buttons & (1 << ARCADE_BUTTON_X)) == 0;
@@ -76,7 +76,7 @@ void draw_eval_bar(game_state_t* game) {
     }
 
     // evaluate the position
-    int eval_score = evaluate_position(game);
+    int eval_score = chess_evaluate_position(game);
 
     // clamp score to max range
     if (eval_score > EVAL_BAR_MAX_SCORE) eval_score = EVAL_BAR_MAX_SCORE;
@@ -108,8 +108,8 @@ void draw_eval_bar(game_state_t* game) {
 }
 
 // helper function to add possible moves for a piece
-static int add_moves_for_piece(game_state_t* game_states, game_state_t* game_base, uint8_t row, uint8_t col, int num_moves, const int8_t moves[][2], int move_count, bool sliding) {
-    cursor_t temp_cursor;
+static int add_moves_for_piece(chess_game_state_t* game_states, chess_game_state_t* game_base, uint8_t row, uint8_t col, int num_moves, const int8_t moves[][2], int move_count, bool sliding) {
+    chess_cursor_t temp_cursor;
     temp_cursor.held_piece_row = row;
     temp_cursor.held_piece_col = col;
     temp_cursor.is_holding_piece = 1;
@@ -133,7 +133,7 @@ static int add_moves_for_piece(game_state_t* game_states, game_state_t* game_bas
             temp_cursor.row = dest_row;
             temp_cursor.col = dest_col;
 
-            if (is_valid_move(&temp_cursor, game_base)) {
+            if (chess_is_valid_move(&temp_cursor, game_base)) {
                 // copy the base game state
                 game_states[num_moves] = *game_base;
 
@@ -142,8 +142,8 @@ static int add_moves_for_piece(game_state_t* game_states, game_state_t* game_bas
                 moving_piece.is_first_move = false;
 
                 // make the move
-                game_states[num_moves].board[row][col].type = PIECE_NONE;
-                game_states[num_moves].board[row][col].color = COLOR_NONE;
+                game_states[num_moves].board[row][col].type = CHESS_PIECE_NONE;
+                game_states[num_moves].board[row][col].color = CHESS_COLOR_NONE;
                 game_states[num_moves].board[dest_row][dest_col] = moving_piece;
 
                 // switch turn
@@ -152,7 +152,7 @@ static int add_moves_for_piece(game_state_t* game_states, game_state_t* game_bas
                 num_moves++;
 
                 // if piece captured or pawn move, stop sliding
-                if (game_base->board[dest_row][dest_col].type != PIECE_NONE) {
+                if (game_base->board[dest_row][dest_col].type != CHESS_PIECE_NONE) {
                     break;
                 }
             } else if (sliding) {
@@ -166,22 +166,22 @@ static int add_moves_for_piece(game_state_t* game_states, game_state_t* game_bas
 
 // get all possible board states for a piece at the given position
 // returns the number of possible moves found
-int get_possible_board_states(game_state_t* game_states, game_state_t* game_base, uint8_t row, uint8_t col) {
+int chess_get_possible_board_states(chess_game_state_t* game_states, chess_game_state_t* game_base, uint8_t row, uint8_t col) {
     int num_moves = 0;
 
     // get the piece at the specified position
     chess_piece_t piece = game_base->board[row][col];
 
     // if there's no piece, return 0
-    if (piece.type == PIECE_NONE) {
+    if (piece.type == CHESS_PIECE_NONE) {
         return 0;
     }
 
     // define move patterns for each piece type
     switch (piece.type) {
-        case PIECE_PAWN: {
+        case CHESS_PIECE_PAWN: {
             // pawn moves depend on color
-            int8_t direction = (piece.color == COLOR_WHITE_PIECE) ? -1 : 1;
+            int8_t direction = (piece.color == CHESS_COLOR_WHITE_PIECE) ? -1 : 1;
 
             // forward moves
             static const int8_t pawn_forward[][2] = {{-1, 0}, {-2, 0}};  // will multiply by direction
@@ -193,7 +193,7 @@ int get_possible_board_states(game_state_t* game_states, game_state_t* game_base
             num_moves = add_moves_for_piece(game_states, game_base, row, col, num_moves, diagonal_moves, 2, false);
             break;
         }
-        case PIECE_KNIGHT: {
+        case CHESS_PIECE_KNIGHT: {
             static const int8_t knight_moves[][2] = {
                 {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
                 {1, -2}, {1, 2}, {2, -1}, {2, 1}
@@ -201,21 +201,21 @@ int get_possible_board_states(game_state_t* game_states, game_state_t* game_base
             num_moves = add_moves_for_piece(game_states, game_base, row, col, num_moves, knight_moves, 8, false);
             break;
         }
-        case PIECE_BISHOP: {
+        case CHESS_PIECE_BISHOP: {
             static const int8_t bishop_moves[][2] = {
                 {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
             };
             num_moves = add_moves_for_piece(game_states, game_base, row, col, num_moves, bishop_moves, 4, true);
             break;
         }
-        case PIECE_ROOK: {
+        case CHESS_PIECE_ROOK: {
             static const int8_t rook_moves[][2] = {
                 {-1, 0}, {1, 0}, {0, -1}, {0, 1}
             };
             num_moves = add_moves_for_piece(game_states, game_base, row, col, num_moves, rook_moves, 4, true);
             break;
         }
-        case PIECE_QUEEN: {
+        case CHESS_PIECE_QUEEN: {
             static const int8_t queen_moves[][2] = {
                 {-1, -1}, {-1, 0}, {-1, 1}, {0, -1},
                 {0, 1}, {1, -1}, {1, 0}, {1, 1}
@@ -223,7 +223,7 @@ int get_possible_board_states(game_state_t* game_states, game_state_t* game_base
             num_moves = add_moves_for_piece(game_states, game_base, row, col, num_moves, queen_moves, 8, true);
             break;
         }
-        case PIECE_KING: {
+        case CHESS_PIECE_KING: {
             static const int8_t king_moves[][2] = {
                 {-1, -1}, {-1, 0}, {-1, 1}, {0, -1},
                 {0, 1}, {1, -1}, {1, 0}, {1, 1}
@@ -239,9 +239,9 @@ int get_possible_board_states(game_state_t* game_states, game_state_t* game_base
 }
 
 // my ai bot
-int minimax(int depth, turn_t turn, game_state_t game) {
+int minimax(int depth, chess_turn_t turn, chess_game_state_t game) {
     if(depth > MAX_DEPTH) {
-        return evaluate_position(&game);
+        return chess_evaluate_position(&game);
     }
     // can be better
     // iterate through all squares

@@ -92,17 +92,17 @@ static const int8_t piece_L[4][4][2] = {
 };
 
 // Get piece blocks based on type and rotation
-void game_get_piece_blocks(piece_type_t type, rotation_t rotation, int8_t offsets[4][2]) {
+void tetris_game_get_piece_blocks(tetris_piece_type_t type, tetris_rotation_t rotation, int8_t offsets[4][2]) {
     const int8_t (*piece_data)[4][2] = NULL;
 
     switch(type) {
-        case PIECE_I: piece_data = piece_I; break;
-        case PIECE_O: piece_data = piece_O; break;
-        case PIECE_T: piece_data = piece_T; break;
-        case PIECE_S: piece_data = piece_S; break;
-        case PIECE_Z: piece_data = piece_Z; break;
-        case PIECE_J: piece_data = piece_J; break;
-        case PIECE_L: piece_data = piece_L; break;
+        case TETRIS_PIECE_I: piece_data = piece_I; break;
+        case TETRIS_PIECE_O: piece_data = piece_O; break;
+        case TETRIS_PIECE_T: piece_data = piece_T; break;
+        case TETRIS_PIECE_S: piece_data = piece_S; break;
+        case TETRIS_PIECE_Z: piece_data = piece_Z; break;
+        case TETRIS_PIECE_J: piece_data = piece_J; break;
+        case TETRIS_PIECE_L: piece_data = piece_L; break;
         default: return;
     }
 
@@ -113,62 +113,63 @@ void game_get_piece_blocks(piece_type_t type, rotation_t rotation, int8_t offset
 }
 
 // Get color for piece type
-spud_color_t game_get_piece_color(piece_type_t type) {
+spud_color_t tetris_game_get_piece_color(tetris_piece_type_t type) {
     switch(type) {
-        case PIECE_I: return PIECE_I_COLOR;
-        case PIECE_O: return PIECE_O_COLOR;
-        case PIECE_T: return PIECE_T_COLOR;
-        case PIECE_S: return PIECE_S_COLOR;
-        case PIECE_Z: return PIECE_Z_COLOR;
-        case PIECE_J: return PIECE_J_COLOR;
-        case PIECE_L: return PIECE_L_COLOR;
+        case TETRIS_PIECE_I: return PIECE_I_COLOR;
+        case TETRIS_PIECE_O: return PIECE_O_COLOR;
+        case TETRIS_PIECE_T: return PIECE_T_COLOR;
+        case TETRIS_PIECE_S: return PIECE_S_COLOR;
+        case TETRIS_PIECE_Z: return PIECE_Z_COLOR;
+        case TETRIS_PIECE_J: return PIECE_J_COLOR;
+        case TETRIS_PIECE_L: return PIECE_L_COLOR;
         default: return COLOR_BLACK;
     }
 }
 
 // Initialize game
-void game_init(game_state_t* game) {
+void tetris_game_init(tetris_game_state_t* game) {
     // Clear the board
     for (uint8_t row = 0; row < BOARD_HEIGHT; row++) {
         for (uint8_t col = 0; col < BOARD_WIDTH; col++) {
-            game->board[row][col].type = PIECE_NONE;
+            game->board[row][col].type = TETRIS_PIECE_NONE;
         }
     }
 
     game->game_over = false;
+    game->exitToMenu = false;
     game->score = 0;
     game->lines_cleared = 0;
 
     // Spawn first piece
-    game_spawn_piece(game);
+    tetris_game_spawn_piece(game);
 }
 
 // Spawn a new piece at the top
-void game_spawn_piece(game_state_t* game) {
+void tetris_game_spawn_piece(tetris_game_state_t* game) {
     // Simple random piece selection (cycles through pieces)
-    static uint8_t next_piece = PIECE_I;
+    static uint8_t next_piece = TETRIS_PIECE_I;
 
     game->active_piece.type = next_piece;
-    game->active_piece.rotation = ROTATION_0;
+    game->active_piece.rotation = TETRIS_ROTATION_0;
     game->active_piece.row = 1;  // Start near top
     game->active_piece.col = BOARD_WIDTH / 2;  // Center
 
     // Cycle to next piece
     next_piece++;
-    if (next_piece > PIECE_L) {
-        next_piece = PIECE_I;
+    if (next_piece > TETRIS_PIECE_L) {
+        next_piece = TETRIS_PIECE_I;
     }
 
     // Check if piece can spawn (game over check)
-    if (!game_can_move(game, 0, 0)) {
+    if (!tetris_game_can_move(game, 0, 0)) {
         game->game_over = true;
     }
 }
 
 // Check if piece can move to a new position
-bool game_can_move(game_state_t* game, int row_offset, int col_offset) {
+bool tetris_game_can_move(tetris_game_state_t* game, int row_offset, int col_offset) {
     int8_t offsets[4][2];
-    game_get_piece_blocks(game->active_piece.type, game->active_piece.rotation, offsets);
+    tetris_game_get_piece_blocks(game->active_piece.type, game->active_piece.rotation, offsets);
 
     for (int i = 0; i < 4; i++) {
         int new_row = game->active_piece.row + offsets[i][0] + row_offset;
@@ -181,7 +182,7 @@ bool game_can_move(game_state_t* game, int row_offset, int col_offset) {
         }
 
         // Check collision with placed blocks
-        if (game->board[new_row][new_col].type != PIECE_NONE) {
+        if (game->board[new_row][new_col].type != TETRIS_PIECE_NONE) {
             return false;
         }
     }
@@ -190,18 +191,18 @@ bool game_can_move(game_state_t* game, int row_offset, int col_offset) {
 }
 
 // Move piece
-void game_move_piece(game_state_t* game, int row_offset, int col_offset) {
-    if (game_can_move(game, row_offset, col_offset)) {
+void tetris_game_move_piece(tetris_game_state_t* game, int row_offset, int col_offset) {
+    if (tetris_game_can_move(game, row_offset, col_offset)) {
         game->active_piece.row += row_offset;
         game->active_piece.col += col_offset;
     }
 }
 
 // Check if piece can rotate
-bool game_can_rotate(game_state_t* game) {
-    rotation_t new_rotation = (game->active_piece.rotation + 1) % 4;
+bool tetris_game_can_rotate(tetris_game_state_t* game) {
+    tetris_rotation_t new_rotation = (game->active_piece.rotation + 1) % 4;
     int8_t offsets[4][2];
-    game_get_piece_blocks(game->active_piece.type, new_rotation, offsets);
+    tetris_game_get_piece_blocks(game->active_piece.type, new_rotation, offsets);
 
     for (int i = 0; i < 4; i++) {
         int new_row = game->active_piece.row + offsets[i][0];
@@ -214,7 +215,7 @@ bool game_can_rotate(game_state_t* game) {
         }
 
         // Check collision with placed blocks
-        if (game->board[new_row][new_col].type != PIECE_NONE) {
+        if (game->board[new_row][new_col].type != TETRIS_PIECE_NONE) {
             return false;
         }
     }
@@ -223,16 +224,16 @@ bool game_can_rotate(game_state_t* game) {
 }
 
 // Rotate piece
-void game_rotate_piece(game_state_t* game) {
-    if (game_can_rotate(game)) {
+void tetris_game_rotate_piece(tetris_game_state_t* game) {
+    if (tetris_game_can_rotate(game)) {
         game->active_piece.rotation = (game->active_piece.rotation + 1) % 4;
     }
 }
 
 // Lock piece in place
-void game_lock_piece(game_state_t* game) {
+void tetris_game_lock_piece(tetris_game_state_t* game) {
     int8_t offsets[4][2];
-    game_get_piece_blocks(game->active_piece.type, game->active_piece.rotation, offsets);
+    tetris_game_get_piece_blocks(game->active_piece.type, game->active_piece.rotation, offsets);
 
     for (int i = 0; i < 4; i++) {
         int row = game->active_piece.row + offsets[i][0];
@@ -244,14 +245,14 @@ void game_lock_piece(game_state_t* game) {
     }
 
     // Check for line clears
-    game_clear_lines(game);
+    tetris_game_clear_lines(game);
 
     // Spawn new piece
-    game_spawn_piece(game);
+    tetris_game_spawn_piece(game);
 }
 
 // Clear completed lines
-void game_clear_lines(game_state_t* game) {
+void tetris_game_clear_lines(tetris_game_state_t* game) {
     uint8_t lines_cleared_now = 0;
 
     // Check each row from bottom to top
@@ -260,7 +261,7 @@ void game_clear_lines(game_state_t* game) {
 
         // Check if row is full
         for (uint8_t col = 0; col < BOARD_WIDTH; col++) {
-            if (game->board[row][col].type == PIECE_NONE) {
+            if (game->board[row][col].type == TETRIS_PIECE_NONE) {
                 line_full = false;
                 break;
             }
@@ -278,7 +279,7 @@ void game_clear_lines(game_state_t* game) {
 
             // Clear top row
             for (uint8_t col = 0; col < BOARD_WIDTH; col++) {
-                game->board[0][col].type = PIECE_NONE;
+                game->board[0][col].type = TETRIS_PIECE_NONE;
             }
 
             // Check this row again (since we moved rows down)
@@ -295,11 +296,11 @@ void game_clear_lines(game_state_t* game) {
 }
 
 // Draw the placed blocks on the board
-void game_draw_board(game_state_t* game) {
+void tetris_game_draw_board(tetris_game_state_t* game) {
     for (uint8_t row = 0; row < BOARD_HEIGHT; row++) {
         for (uint8_t col = 0; col < BOARD_WIDTH; col++) {
-            if (game->board[row][col].type != PIECE_NONE) {
-                spud_color_t color = game_get_piece_color(game->board[row][col].type);
+            if (game->board[row][col].type != TETRIS_PIECE_NONE) {
+                spud_color_t color = tetris_game_get_piece_color(game->board[row][col].type);
                 uint8_t x = col * BLOCK_SIZE;
                 uint8_t y = row * BLOCK_SIZE;
                 display_fill_rect(x, y, BLOCK_SIZE, BLOCK_SIZE, color);
@@ -309,12 +310,12 @@ void game_draw_board(game_state_t* game) {
 }
 
 // Draw the active falling piece
-void game_draw_active_piece(game_state_t* game) {
+void tetris_game_draw_active_piece(tetris_game_state_t* game) {
     if (game->game_over) return;
 
     int8_t offsets[4][2];
-    game_get_piece_blocks(game->active_piece.type, game->active_piece.rotation, offsets);
-    spud_color_t color = game_get_piece_color(game->active_piece.type);
+    tetris_game_get_piece_blocks(game->active_piece.type, game->active_piece.rotation, offsets);
+    spud_color_t color = tetris_game_get_piece_color(game->active_piece.type);
 
     for (int i = 0; i < 4; i++) {
         int row = game->active_piece.row + offsets[i][0];
@@ -329,7 +330,7 @@ void game_draw_active_piece(game_state_t* game) {
 }
 
 // Draw score display on the right side
-void game_draw_score(game_state_t* game) {
+void tetris_game_draw_score(tetris_game_state_t* game) {
     // Score area starts at x=42 (after the 40-pixel play field)
     // We have 22 pixels of width to work with
 

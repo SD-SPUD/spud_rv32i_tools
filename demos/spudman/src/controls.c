@@ -2,12 +2,12 @@
 
 static uint16_t last_buttons = 0;
 
-void controls_init(void) {
+void spudman_controls_init(void) {
     arcade_init();
     last_buttons = arcade_read_all();
 }
 
-void controls_update(game_state_t* game) {
+void spudman_controls_update(game_state_t* game) {
     // Read arcade buttons
     uint16_t buttons = arcade_read_all();
     uint16_t button_pressed = buttons & ~last_buttons;
@@ -15,7 +15,7 @@ void controls_update(game_state_t* game) {
     // Handle home screen - A button starts game
     if (game->game_state == GAME_STATE_HOME) {
         if (button_pressed & (1 << ARCADE_BUTTON_A)) {
-            game_reset(game);
+            spudman_game_reset(game);
             uart_puts("Game started!\r\n");
         }
         last_buttons = buttons;
@@ -25,7 +25,7 @@ void controls_update(game_state_t* game) {
     // Handle game over - A button returns to home screen
     if (game->game_state == GAME_STATE_GAME_OVER) {
         if (button_pressed & (1 << ARCADE_BUTTON_A)) {
-            game_init(game);  // Return to home screen
+            spudman_game_init(game);  // Return to home screen
             uart_puts("Returning to home screen...\r\n");
         }
         last_buttons = buttons;
@@ -34,7 +34,7 @@ void controls_update(game_state_t* game) {
 
     // Y button resets game during play
     if (button_pressed & (1 << ARCADE_BUTTON_Y)) {
-        game_reset(game);
+        spudman_game_reset(game);
         uart_puts("Game reset!\r\n");
     }
 
@@ -52,6 +52,11 @@ void controls_update(game_state_t* game) {
         game->spudman.next_direction = DIR_RIGHT;
     }
 
+    // SELECT button exits to menu
+    if (button_pressed & (1 << ARCADE_BUTTON_SELECT)) {
+        game->exitToMenu = true;
+    }
+
     last_buttons = buttons;
 
     // UART keyboard controls
@@ -61,7 +66,7 @@ void controls_update(game_state_t* game) {
         // Handle home screen - A, Enter or Space starts game
         if (game->game_state == GAME_STATE_HOME) {
             if (c == 'a' || c == 'A' || c == '\r' || c == '\n' || c == ' ') {
-                game_reset(game);
+                spudman_game_reset(game);
                 uart_puts("Game started!\r\n");
             }
             return;  // Don't process other keys on home screen
@@ -70,7 +75,7 @@ void controls_update(game_state_t* game) {
         // Handle game over - A, Enter or Space returns to home screen
         if (game->game_state == GAME_STATE_GAME_OVER) {
             if (c == 'a' || c == 'A' || c == '\r' || c == '\n' || c == ' ') {
-                game_init(game);  // Return to home screen
+                spudman_game_init(game);  // Return to home screen
                 uart_puts("Returning to home screen...\r\n");
             }
             return;  // Don't process other keys on game over screen
@@ -98,7 +103,7 @@ void controls_update(game_state_t* game) {
                 case 'r':
                 case 'R':
                     // Reset game during play
-                    game_reset(game);
+                    spudman_game_reset(game);
                     uart_puts("Game reset!\r\n");
                     break;
                 case 'q':

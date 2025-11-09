@@ -15,7 +15,7 @@ void clear(){
     }
 }
 
-int main() {
+int matrix_main() {
     // initialize the spudkit library
     spudkit_init();
     clear();

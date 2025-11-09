@@ -99,13 +99,13 @@ static const int king_table[8][8] = {
 #define EVAL_BAR_MAX_SCORE 2000  // score at which bar is fully one color
 
 // evaluation function
-int evaluate_position(game_state_t* game);
+int chess_evaluate_position(chess_game_state_t* game);
 
 // draw eval bar on the left side of screen (only if X button is held)
-void draw_eval_bar(game_state_t* game);
+void draw_eval_bar(chess_game_state_t* game);
 
 // get all possible board states for a piece at the given position
 // returns the number of possible moves found
-int get_possible_board_states(game_state_t* game_states, game_state_t* game_base, uint8_t row, uint8_t col);
+int chess_get_possible_board_states(chess_game_state_t* game_states, chess_game_state_t* game_base, uint8_t row, uint8_t col);
 
 #endif // CHESS_ENGINE_H

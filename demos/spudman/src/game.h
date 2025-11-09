@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <stdbool.h>
 #include "spudkit.h"
 
 // Game constants
@@ -88,15 +89,16 @@ typedef struct {
     uint16_t power_timer;  // Countdown for power pellet effect
     uint32_t frame_count;
     uint8_t game_state;  // HOME, PLAYING, or GAME_OVER
+    bool exitToMenu;  // exit to menu flag (set by SELECT button)
 } game_state_t;
 
 // Function prototypes
-void game_init(game_state_t* game);
-void game_reset(game_state_t* game);  // Reset game but keep in playing state
-void game_update(game_state_t* game);
-void game_draw(game_state_t* game);
-void game_draw_home_screen(void);
-void game_check_collisions(game_state_t* game);
-uint8_t game_can_move(game_state_t* game, int8_t x, int8_t y);
+void spudman_game_init(game_state_t* game);
+void spudman_game_reset(game_state_t* game);  // Reset game but keep in playing state
+void spudman_game_update(game_state_t* game);
+void spudman_game_draw(game_state_t* game);
+void spudman_game_draw_home_screen(void);
+void spudman_game_check_collisions(game_state_t* game);
+uint8_t spudman_game_can_move(game_state_t* game, int8_t x, int8_t y);
 
 #endif // GAME_H

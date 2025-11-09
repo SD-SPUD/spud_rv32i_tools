@@ -46,6 +46,8 @@ void game_init(game_state_t* game) {
     game->player.frame_count = 0;
     game->player.elapsed_seconds = 0;
 
+    game->exitToMenu = false;
+
     // Initialize bot cars
     for (int i = 0; i < MAX_BOT_CARS; i++) {
         game->bot_cars[i].active = 0;

@@ -15,7 +15,7 @@
 #define GRID_COLOR COLOR_WHITE
 
 // board functions
-void board_init(void);
-void board_draw(void);
+void tetris_board_init(void);
+void tetris_board_draw(void);
 
 #endif // TETRIS_BOARD_H

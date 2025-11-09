@@ -15,7 +15,7 @@ const char* button_names[10] = {
 };
 /*
 
-int main() {
+int arcade_test_main() {
     // initialize spudkit library
     spudkit_init();
 

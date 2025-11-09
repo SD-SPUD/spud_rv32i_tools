@@ -3,10 +3,7 @@
 #include "track.h"
 #include "controls.h"
 
-int main(void) {
-    // Initialize SpudKit
-    spudkit_init();
-
+int spudracer_main(void) {
     uart_puts("\r\n");
     uart_puts("=========================================\r\n");
     uart_puts("    SPUDRACER - Speed Racer @ UCF\r\n");
@@ -16,10 +13,10 @@ int main(void) {
     uart_puts("  Arcade Buttons:\r\n");
     uart_puts("    LEFT/RIGHT - Change lanes\r\n");
     uart_puts("    A Button   - Boost (brief invincibility)\r\n");
+    uart_puts("    SELECT     - Exit to menu\r\n");
     uart_puts("  Keyboard:\r\n");
     uart_puts("    A/D        - Change lanes\r\n");
     uart_puts("    SPACE      - Boost\r\n");
-    uart_puts("    Q          - Quit\r\n");
     uart_puts("\r\n");
     uart_puts("Features:\r\n");
     uart_puts("  - Dodge bot cars in 3 lanes\r\n");
@@ -42,6 +39,12 @@ int main(void) {
 
     // Main game loop
     while (1) {
+        // Check if user wants to exit to menu
+        if (game.exitToMenu) {
+            uart_puts("exiting to menu...\r\n");
+            break;
+        }
+
         // Handle input
         controls_update(&game);
 
