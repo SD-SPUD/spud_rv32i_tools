@@ -1,5 +1,5 @@
 # RISC-V RV32I Toolchain Configuration
-RISCV_PREFIX = riscv32-unknown-elf-
+RISCV_PREFIX = riscv64-unknown-elf-
 CC = $(RISCV_PREFIX)gcc
 AS = $(RISCV_PREFIX)as
 LD = $(RISCV_PREFIX)ld
@@ -9,7 +9,7 @@ SIZE = $(RISCV_PREFIX)size
 NM = $(RISCV_PREFIX)nm
 
 # Compiler flags for RV32IM
-CFLAGS = -march=rv32im_zicsr -mabi=ilp32 -O2 -Wall -Wextra -nostdlib -nostartfiles -fno-builtin -Ispudkit/include
+CFLAGS = -march=rv32im_zicsr -mabi=ilp32 -O2 -Wall -Wextra -nostdlib -nostartfiles -fno-builtin -Ispudkit/include -funroll-all-loops
 ASFLAGS = -march=rv32im_zicsr -mabi=ilp32
 LDFLAGS = -march=rv32im_zicsr -mabi=ilp32 -nostdlib -lgcc
 
