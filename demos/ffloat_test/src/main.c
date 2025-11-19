@@ -326,3 +326,7 @@ int ffloat_test_main() {
 
     return 0;
 }
+
+int main() {
+    return ffloat_test_main();
+}

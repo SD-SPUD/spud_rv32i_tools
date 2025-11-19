@@ -12,6 +12,13 @@ void spudman_controls_update(game_state_t* game) {
     uint16_t buttons = arcade_read_all();
     uint16_t button_pressed = buttons & ~last_buttons;
 
+    // SELECT button exits to menu (works in all game states)
+    if (button_pressed & (1 << ARCADE_BUTTON_SELECT)) {
+        game->exitToMenu = true;
+        last_buttons = buttons;
+        return;
+    }
+
     // Handle home screen - A button starts game
     if (game->game_state == GAME_STATE_HOME) {
         if (button_pressed & (1 << ARCADE_BUTTON_A)) {
@@ -52,16 +59,17 @@ void spudman_controls_update(game_state_t* game) {
         game->spudman.next_direction = DIR_RIGHT;
     }
 
-    // SELECT button exits to menu
-    if (button_pressed & (1 << ARCADE_BUTTON_SELECT)) {
-        game->exitToMenu = true;
-    }
-
     last_buttons = buttons;
 
     // UART keyboard controls
     if (uart_available()) {
         char c = uart_getc();
+
+        // Q key exits to menu (works in all game states)
+        if (c == 'q' || c == 'Q' || c == 27) {  // 27 = ESC key
+            game->exitToMenu = true;
+            return;
+        }
 
         // Handle home screen - A, Enter or Space starts game
         if (game->game_state == GAME_STATE_HOME) {
@@ -105,11 +113,6 @@ void spudman_controls_update(game_state_t* game) {
                     // Reset game during play
                     spudman_game_reset(game);
                     uart_puts("Game reset!\r\n");
-                    break;
-                case 'q':
-                case 'Q':
-                    uart_puts("\r\nThanks for playing SPUDMAN!\r\n");
-                    uart_exit(0);
                     break;
             }
         }

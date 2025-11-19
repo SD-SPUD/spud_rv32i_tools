@@ -105,3 +105,7 @@ int arcade_test_main() {
 
     return 0;
 }
+
+int main() {
+    return arcade_test_main();
+}

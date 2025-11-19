@@ -55,3 +55,8 @@ int spudman_main(void) {
 
     return 0;
 }
+
+int main() {
+    spudkit_init();
+    return spudman_main();
+}

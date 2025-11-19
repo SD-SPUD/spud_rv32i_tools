@@ -171,3 +171,7 @@ int arcade_display_main() {
 
     return 0;
 }
+
+int main() {
+    return arcade_display_main();
+}

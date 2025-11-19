@@ -68,8 +68,9 @@ int donut_main() {
                     if (color_intensity < 0) color_intensity = 0;
                     if (color_intensity > 7) color_intensity = 7;
 
+                    /*
                     // Purple hues from dark to bright
-                    uint16_t purple_shades[] = {
+                    // uint16_t purple_shades[] = {
                         0x6010,  // Dark purple (R=12, G=0, B=16)
                         0x7011,  // Darker purple (R=14, G=0, B=17)
                         0x8012,  // Medium-dark purple (R=16, G=0, B=18)
@@ -80,6 +81,8 @@ int donut_main() {
                         0xD017   // Brightest purple (R=26, G=0, B=23)
                     };
                     display_set_pixel(screen_x, screen_y, purple_shades[color_intensity]);
+                    */
+                    display_set_pixel(screen_x, screen_y, COLOR_MAGENTA);
                 }
             }
         }

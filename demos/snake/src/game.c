@@ -1,6 +1,6 @@
 #include "game.h"
 
-void game_init(game_state_t* game) {
+void snake_game_init(game_state_t* game) {
     game->gameOver = false;
     game->exitToMenu = false;
     game->dir = DIR_STOP;
@@ -10,13 +10,13 @@ void game_init(game_state_t* game) {
     game->y = GRID_HEIGHT / 2;
 
     // spawn initial food
-    game_spawn_food(game);
+    snake_game_spawn_food(game);
 
     game->score = 0;
     game->nTail = 0;
 }
 
-void game_spawn_food(game_state_t* game) {
+void snake_game_spawn_food(game_state_t* game) {
     // generate random food position
     game->foodX = rand_range(0, GRID_WIDTH - 1);
     game->foodY = rand_range(0, GRID_HEIGHT - 1);
@@ -47,7 +47,7 @@ void game_spawn_food(game_state_t* game) {
     }
 }
 
-void game_update(game_state_t* game) {
+void snake_game_update(game_state_t* game) {
     // update tail positions
     int prevX = game->tailX[0];
     int prevY = game->tailY[0];
@@ -92,11 +92,11 @@ void game_update(game_state_t* game) {
     if (game->x == game->foodX && game->y == game->foodY) {
         game->score += 10;
         game->nTail++;
-        game_spawn_food(game);
+        snake_game_spawn_food(game);
     }
 }
 
-void game_draw(game_state_t* game) {
+void snake_game_draw(game_state_t* game) {
     display_clear(COLOR_BLACK);
 
     // draw snake head as 4x4 block

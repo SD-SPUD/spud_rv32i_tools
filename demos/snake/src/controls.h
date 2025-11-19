@@ -5,7 +5,7 @@
 #include "game.h"
 
 // control functions
-void controls_init(void);
-void controls_update(game_state_t* game);
+void snake_controls_init(void);
+void snake_controls_update(game_state_t* game);
 
 #endif // SNAKE_CONTROLS_H

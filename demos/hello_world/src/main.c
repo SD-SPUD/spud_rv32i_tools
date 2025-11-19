@@ -11,3 +11,7 @@ int hello_world_main() {
     }
     return 0;
 }
+
+int main() {
+    return hello_world_main();
+}

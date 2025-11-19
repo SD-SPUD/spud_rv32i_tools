@@ -3,13 +3,13 @@
 // previous button state for edge detection
 static uint16_t last_buttons = 0;
 
-void controls_init(void) {
+void snake_controls_init(void) {
     // initialize arcade buttons
     arcade_init();
     last_buttons = arcade_read_all();
 }
 
-void controls_update(game_state_t* game) {
+void snake_controls_update(game_state_t* game) {
     // read arcade buttons
     uint16_t buttons = arcade_read_all();
     uint16_t button_pressed = buttons & ~last_buttons;  // detect rising edge
@@ -39,7 +39,7 @@ void controls_update(game_state_t* game) {
 
     // Y button resets the game
     if (button_pressed & (1 << ARCADE_BUTTON_Y)) {
-        game_init(game);
+        snake_game_init(game);
     }
 
     // SELECT button exits to menu
@@ -80,7 +80,7 @@ void controls_update(game_state_t* game) {
                 break;
             case 'r':
             case 'R':
-                game_init(game);
+                snake_game_init(game);
                 break;
         }
     }

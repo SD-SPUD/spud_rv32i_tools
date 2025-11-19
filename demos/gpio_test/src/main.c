@@ -98,3 +98,7 @@ int gpio_test_main() {
     uart_puts("\r\nSpudKit GPIO test complete!\r\n");
     return 0;
 }
+
+int main() {
+    return gpio_test_main();
+}

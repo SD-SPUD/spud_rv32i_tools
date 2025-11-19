@@ -34,9 +34,9 @@ typedef struct {
 } game_state_t;
 
 // game functions
-void game_init(game_state_t* game);
-void game_update(game_state_t* game);
-void game_draw(game_state_t* game);
-void game_spawn_food(game_state_t* game);
+void snake_game_init(game_state_t* game);
+void snake_game_update(game_state_t* game);
+void snake_game_draw(game_state_t* game);
+void snake_game_spawn_food(game_state_t* game);
 
 #endif // SNAKE_GAME_H

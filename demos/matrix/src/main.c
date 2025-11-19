@@ -29,3 +29,7 @@ int matrix_main() {
     }
     return 0;
 }
+
+int main() {
+    return matrix_main();
+}
