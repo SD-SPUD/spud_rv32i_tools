@@ -1,5 +1,5 @@
 # RISC-V RV32I Toolchain Configuration
-RISCV_PREFIX = riscv64-unknown-elf-
+RISCV_PREFIX = riscv32-unknown-elf-
 CC = $(RISCV_PREFIX)gcc
 AS = $(RISCV_PREFIX)as
 LD = $(RISCV_PREFIX)ld
@@ -478,10 +478,10 @@ launcher:
 	@$(LD) -m elf32lriscv -r demos/launcher/build/spudman_objs/*.o -o demos/launcher/build/spudman.o
 
 	@echo "Compiling donut game..."
-	@mkdir -p demos/launcher/build/donut_objs
-	@for c_file in demos/donut/src/*.c; do \
+	@mkdir -p demos/launcher/build/sample_objs
+	@for c_file in demos/sample/src/*.c; do \
 		if [ -f "$$c_file" ]; then \
-			$(CC) $(CFLAGS) -Idemos/donut/src -c $$c_file -o demos/launcher/build/donut_objs/$$(basename $$c_file .c).o; \
+			$(CC) $(CFLAGS) -Idemos/sample/src -c $$c_file -o demos/launcher/build/donut_objs/$$(basename $$c_file .c).o; \
 		fi \
 	done
 	@$(LD) -m elf32lriscv -r demos/launcher/build/donut_objs/*.o -o demos/launcher/build/donut.o
