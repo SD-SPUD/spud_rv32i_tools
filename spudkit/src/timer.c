@@ -35,9 +35,11 @@ uint8_t timer_is_expired(void) {
 }
 
 void delay_ms(uint32_t milliseconds) {
-    // Simple busy-wait delay (CPU clock is 25MHz, not 100MHz)
-    volatile uint32_t cycles = milliseconds * 25000; // 25k cycles per ms at 25MHz
-    for(volatile uint32_t i = 0; i < cycles; i++) {
+    // Busy-wait delay calibrated for 25MHz CPU clock
+    // Loop overhead: ~5 cycles per iteration (increment, compare, branch, nop)
+    // So we need 25000 / 5 = 5000 iterations per millisecond
+    volatile uint32_t iterations = milliseconds * 5000;
+    for(volatile uint32_t i = 0; i < iterations; i++) {
         asm volatile("nop");
     }
 }

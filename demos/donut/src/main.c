@@ -90,3 +90,7 @@ int donut_main() {
     return 0;
 
 }
+
+int main(){
+    return donut_main();
+}
