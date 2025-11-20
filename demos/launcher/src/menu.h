@@ -32,5 +32,6 @@ extern int tetris_main(void);
 extern int chess_main(void);
 extern int spudman_main(void);
 extern int donut_main(void);
+extern int sample_main(void);
 
 #endif // LAUNCHER_MENU_H

@@ -35,7 +35,7 @@ DEFAULT_DEMO = hello_world
 DEMOS = $(notdir $(wildcard demos/*))
 
 # Launcher games list
-LAUNCHER_GAMES = snake tetris chess spudman donut
+LAUNCHER_GAMES = snake tetris chess spudman sample
 
 # Help message
 .PHONY: help
@@ -477,14 +477,14 @@ launcher:
 	done
 	@$(LD) -m elf32lriscv -r demos/launcher/build/spudman_objs/*.o -o demos/launcher/build/spudman.o
 
-	@echo "Compiling donut game..."
+	@echo "Compiling sample game..."
 	@mkdir -p demos/launcher/build/sample_objs
 	@for c_file in demos/sample/src/*.c; do \
 		if [ -f "$$c_file" ]; then \
-			$(CC) $(CFLAGS) -Idemos/sample/src -c $$c_file -o demos/launcher/build/donut_objs/$$(basename $$c_file .c).o; \
+			$(CC) $(CFLAGS) -Idemos/sample/src -c $$c_file -o demos/launcher/build/sample_objs/$$(basename $$c_file .c).o; \
 		fi \
 	done
-	@$(LD) -m elf32lriscv -r demos/launcher/build/donut_objs/*.o -o demos/launcher/build/donut.o
+	@$(LD) -m elf32lriscv -r demos/launcher/build/sample_objs/*.o -o demos/launcher/build/sample.o
 
 	# Link everything together
 	@echo "Linking launcher..."
@@ -495,7 +495,7 @@ launcher:
 		demos/launcher/build/tetris.o \
 		demos/launcher/build/chess.o \
 		demos/launcher/build/spudman.o \
-		demos/launcher/build/donut.o \
+		demos/launcher/build/sample.o \
 		spudkit/build/*.o \
 		-o demos/launcher/build/launcher.elf
 
