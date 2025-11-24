@@ -4,7 +4,7 @@
 // Button macro
 #define BUTTON_PRESSED(b, p) (p & (1 << (b)))
 
-int main(void) {
+int sample_main() {
     spudkit_init();
     arcade_init();
 
@@ -31,6 +31,10 @@ int main(void) {
         if (BUTTON_PRESSED(ARCADE_BUTTON_LEFT, btn))  x = (x < 63) ? x + 1 : 63;
         if (BUTTON_PRESSED(ARCADE_BUTTON_RIGHT, btn)) x = (x > 0) ? x - 1 : 0;
 
+	// exit the game
+        if (BUTTON_PRESSED(ARCADE_BUTTON_SELECT, pressed)) break; 
+
+
         // Draw frame
         if (show_text) {
             display_clear(COLOR_BLACK);
@@ -45,5 +49,10 @@ int main(void) {
         last_btn = btn;
         for (volatile int i = 0; i < 10000; i++);
     }
+    return 0;
+}
+
+int main() {
+    sample_main();
     return 0;
 }

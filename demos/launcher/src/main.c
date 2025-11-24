@@ -22,7 +22,7 @@ int main(void) {
     uart_puts("  - TETRIS\r\n");
     uart_puts("  - CHESS\r\n");
     uart_puts("  - SPUDMAN\r\n");
-    uart_puts("  - DONUT\r\n");
+    uart_puts("  - SANDBOX\r\n");
     uart_puts("\r\n");
 
     // Initialize menu
@@ -63,8 +63,8 @@ int main(void) {
                     spudman_main();
                     break;
                 case GAME_DONUT:
-                    uart_puts("Starting DONUT...\r\n");
-                    donut_main();
+                    uart_puts("Starting SANDBOX...\r\n");
+                    sample_main();
                     break;
             }
 

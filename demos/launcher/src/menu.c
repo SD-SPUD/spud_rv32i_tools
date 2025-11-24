@@ -6,7 +6,7 @@ static const char* game_names[NUM_GAMES] = {
     "TETRIS",
     "CHESS",
     "SPUDMAN",
-    "DONUT"
+    "SANDBOX"
 };
 
 void menu_init(menu_state_t* menu) {
