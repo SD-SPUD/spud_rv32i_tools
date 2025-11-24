@@ -1,36 +1,13 @@
 # RISC-V RV32I Tools & SpudKit
 
-This repository contains tools, SpudKit library, and demo projects for creating ELF files to run on the [RISC-V SoC](../vivado_proj/spud_riscv_soc) FPGA project.
+Comprehensive development toolkit for the SPUD RISC-V SoC. This repository contains the SpudKit library, build system, and a collection of demo applications ranging from simple hardware tests to fully-featured games and graphics demos.
 
-## Project Structure
+## What's Included
 
-```
-spud_rv32i-tools/
-├── spudkit/                # SpudKit development library
-│   ├── include/            # Header files
-│   │   ├── spudkit.h       # Main library header
-│   │   ├── display.h       # 64x64 display engine
-│   │   ├── uart.h          # UART communication
-│   │   ├── gpio.h          # GPIO control
-│   │   ├── timer.h         # Timer functions
-│   │   ├── spi.h           # SPI interface
-│   │   ├── irq.h           # Interrupt handling
-│   │   └── utils.h         # Utility functions
-│   ├── src/                # Library source files
-│   ├── build-support/      # Shared build files
-│   │   ├── rv32i.ld        # Centralized linker script
-│   │   └── start.s         # Centralized startup code
-│   └── build/              # Library build artifacts (generated)
-├── demos/                  # Demo projects
-│   ├── hello_world/        # Basic UART demo
-│   ├── gpio_test/          # GPIO testing demo
-│   └── display_demo/       # Visual display demo with animations
-│       ├── src/            # Source code
-│       │   └── main.c      # Demo program
-│       └── build/          # Build artifacts (generated)
-├── Makefile               # Enhanced build system
-└── README.md             # This file
-```
+- **SpudKit Library** - Hardware abstraction layer with peripheral drivers, display engine, and utilities
+- **Build System** - Makefile-based build system with automatic dependency tracking
+- **20+ Demo Applications** - From simple hardware tests to fully-featured games
+- **Toolchain Support** - Works with standard RISC-V GNU toolchain
 
 ## RISC-V Toolchain Setup
 
@@ -71,86 +48,109 @@ Toolchain found: riscv32-unknown-elf-gcc (GCC) 12.2.0
 
 ## SpudKit Library
 
-SpudKit is a comprehensive development library for the RISC-V SoC that provides:
+SpudKit is a comprehensive hardware abstraction library for bare-metal RISC-V development on the SPUD SoC.
 
-- **Display Engine**: 64x64 pixel framebuffer with drawing primitives (lines, rectangles, circles, text)
-- **Dual Display Modes**:
-  - `SIM_DISPLAY=1` - Terminal simulation mode for development
-  - `UART_DISPLAY=1` - Hardware UART output with ANSI colors
-- **Peripheral Drivers**: UART, GPIO, Timer, SPI, IRQ controller access
-- **Utility Functions**: Random number generation, string operations, math functions
-- **Color Support**: RGB565 color format with ANSI terminal color mapping
+### Core Features
 
-### Display Features
+**Display Engine** (`display.h`)
+- 64x64 pixel framebuffer with RGB565 colors
+- Drawing primitives: pixels, lines, rectangles, circles, filled shapes
+- Text rendering support
+- Dual display modes:
+  - `SIM_DISPLAY=1` - Terminal visualization for development/debugging
+  - `UART_DISPLAY=1` - ANSI color output for hardware UART display
+- Hardware display controller support at `0x96000000`
 
-The display engine supports:
-- 64x64 pixel framebuffer
-- RGB565 color format
-- Drawing primitives: pixels, lines, rectangles, circles
-- Text rendering capabilities
-- Terminal visualization using Unicode half-height blocks
-- Real-time animation support
+**Peripheral Drivers**
+- `uart.h` - Serial communication (1Mbaud default)
+- `gpio.h` - GPIO control with interrupt support
+- `timer.h` - 32-bit hardware timers with interrupts
+- `spi.h` - SPI master interface
+- `irq.h` - Interrupt controller management
+- `led.h` - LED matrix controller
 
-## Usage
+**Math Libraries**
+- `ffloat.h` - Fixed-point arithmetic for efficient math without FPU
+- `ffvect3.h` - 3D vector operations (rotation, translation, projection)
+
+**Utilities** (`utils.h`)
+- String operations (strlen, strcpy, strcmp, itoa, etc.)
+- Random number generation
+- Memory operations
+- Common helper functions
+
+### Using SpudKit
+
+Include the main header in your program:
+```c
+#include "spudkit.h"
+
+int main() {
+    spudkit_init();  // Initialize all peripherals
+    uart_puts("Hello from SPUD!\r\n");
+    display_clear(0);
+    display_draw_rect(10, 10, 40, 40, RGB565(255, 0, 0));
+    display_update();
+    return 0;
+}
+```
+
+## Building Demos
+
+### Quick Start
+
+```bash
+# Build a specific demo
+make hello_world
+
+# List all available demos
+make list
+
+# Build all demos
+make all
+
+# Clean build artifacts
+make clean
+
+# Get help
+make help
+```
 
 ### Build Options
 
-```bash
-# Basic build
-make hello_world
-
-# Build with simulation display (terminal output)
-SIM_DISPLAY=1 make display_demo
-
-# Build with UART display (hardware ANSI colors)
-UART_DISPLAY=1 make display_demo
-```
-
-### Build a Specific Demo
+Enable display modes with environment variables or flags:
 
 ```bash
-make display_demo
+# Build with simulation display (terminal output for debugging)
+SIM_DISPLAY=1 make donut
+
+# Build with UART display (ANSI color output for hardware)
+UART_DISPLAY=1 make snake
+
+# Build with both modes
+SIM_DISPLAY=1 UART_DISPLAY=1 make tetris
 ```
 
-This will:
-1. Compile SpudKit library files
-2. Assemble shared startup code
-3. Compile demo C source files
-4. Link everything with SpudKit library
-5. Generate ELF file in `demos/display_demo/build/`
-6. Create binary and disassembly files
+**Tip:** Use `SIM_DISPLAY=1` during development to see visual output in your terminal during Verilator simulation.
 
-### Build All Demos
+### Build Process
 
-```bash
-make all
-```
+When you build a demo, the Makefile:
+1. Compiles all SpudKit library source files
+2. Assembles the startup code (`start.s`)
+3. Compiles demo-specific C source files
+4. Links everything with the RV32I linker script
+5. Generates output files in `demos/<name>/build/`:
+   - `<name>.elf` - Executable for loading to hardware/simulation
+   - `<name>.bin` - Raw binary image
+   - `<name>.dis` - Disassembly listing for debugging
 
-### List Available Demos
+### Using the Makefile Directly
 
-```bash
-make list
-```
-
-### Clean Build Artifacts
-
-```bash
-make clean
-```
-
-### Run Demo on Hardware
-
-```bash
-make run display_demo
-```
-
-This will automatically build the demo (if needed) and run it on the testbench.
-
-### Get Help
-
-```bash
-make help
-```
+If you're in this directory, you can use the Makefile directly. Alternatively, use the convenience scripts from the parent `spud_env` directory:
+- `../build.sh <demo>` - Simplified build interface
+- `../run.sh <demo>` - Build and run on FPGA
+- `../sim.sh <demo>` - Build and run in Verilator
 
 ## Target Hardware Specifications
 
@@ -169,109 +169,215 @@ The generated ELF files are designed for the RISC-V SoC with these specification
 
 To create a new demo project:
 
-1. Create a new directory under `demos/`:
+1. **Create demo directory structure:**
+   ```bash
+   mkdir -p demos/my_demo/src
+   ```
+
+2. **Create your main program** (`demos/my_demo/src/main.c`):
+   ```c
+   #include "spudkit.h"
+
+   int main() {
+       spudkit_init();
+       uart_puts("My Demo Starting!\r\n");
+
+       // Your code here
+       display_clear(RGB565(0, 0, 0));
+       display_draw_text(10, 28, "Hello!", RGB565(255, 255, 255));
+       display_update();
+
+       while(1) {
+           // Main loop
+       }
+       return 0;
+   }
+   ```
+
+3. **Build your demo:**
+   ```bash
+   make my_demo
+   ```
+
+The build system automatically uses the shared startup code and linker script from `spudkit/build-support/`, so you don't need to copy those files.
+
+4. **Test your demo:**
+   ```bash
+   # In simulation
+   ../sim.sh my_demo
+
+   # On hardware
+   ../run.sh my_demo
+   ```
+
+## Available Demos
+
+### Basic Demos
+- **hello_world** - Simple UART "Hello World" (great starting point)
+- **gpio_test** - GPIO peripheral testing and control
+- **display_demo** - Graphics primitives demo with animations
+- **arcade_test** - Arcade controller button testing
+- **arcade_display** - Arcade display hardware test
+- **ffloat_test** - Fixed-point math library testing
+- **led_test_*** - LED controller tests at various speeds (500k, 1M, 2M)
+- **sample** - Template demo for creating new projects
+
+### Graphics & Visual Demos
+- **donut** - 3D spinning donut using fixed-point 3D math
+- **matrix** - Matrix rain animation effect
+- **langton** - Langton's ant cellular automaton simulation
+
+### Games
+- **snake** - Classic Snake game with arcade controls
+- **tetris** - Full Tetris implementation
+- **chess** - Chess game with AI opponent
+- **spudman** - Pac-Man style arcade game
+- **spudracer** - Racing game
+- **launcher** - Game launcher/menu system for selecting demos
+
+Each demo includes source code demonstrating specific SpudKit features and can serve as a reference for your own projects.
+
+## Running on Hardware
+
+### Using the Convenience Scripts (Recommended)
+
+From the parent `spud_env` directory:
+
 ```bash
-mkdir demos/my_demo
-mkdir demos/my_demo/src
+# Build and run on FPGA
+./run.sh hello_world
+
+# Load to FPGA without console
+./load.sh snake
+screen /dev/ttyUSB1 1000000  # Connect manually
+
+# Run in Verilator simulation
+./sim.sh donut donut_waves
+
+# Just build
+./build.sh tetris --uart-display
 ```
 
-2. Add your source files to `demos/my_demo/src/`:
-   - `main.c` - Your main C program
-   - `start.s` - Assembly startup (copy from hello_world)
-   - `rv32i.ld` - Linker script (copy from hello_world)
+### Direct Hardware Access
 
-3. Build your demo:
-```bash
-make my_demo
-```
+If you prefer to work with the ELF files directly:
 
-## Demo Descriptions
-
-### hello_world
-A simple "Hello World" program that outputs text via UART. Demonstrates:
-- Basic UART communication
-- Bare-metal C programming for RISC-V
-- Memory-mapped peripheral access
-- SpudKit library integration
-
-### gpio_test
-GPIO testing and control demo. Demonstrates:
-- GPIO pin control and reading
-- Hardware peripheral interaction
-- Real-time input/output operations
-
-### display_demo
-Interactive visual display with animated graphics. Demonstrates:
-- SpudKit display engine usage
-- RGB565 color graphics
-- Drawing primitives (lines, rectangles, circles)
-- Real-time animation with random graphics
-- Terminal visualization or UART color output
-- Random number generation for dynamic content
-
-## Hardware Integration
-
-The generated ELF files are designed to work with the RISC-V SoC FPGA project spud.
-
-### FPGA Integration
-To load and run programs on the FPGA:
 1. Build your demo: `make display_demo`
-2. Use the ELF file from `demos/display_demo/build/display_demo.elf` with the SoC's debug bridge
-3. The program will output to UART at 1Mbaud
+2. Load the ELF: `demos/display_demo/build/display_demo.elf`
+3. Use the Python scripts in `../spud_riscv_soc/fpga/arty/run/`
 
-### UART Console Access
-For UART display mode, connect to the hardware using:
+### UART Console
 
-**Using minicom with color support:**
+For programs with UART output, connect using:
+
 ```bash
+# With color support (recommended for display demos)
 minicom -c -D /dev/ttyUSB1 -b 1000000
-```
 
-**Using screen:**
-```bash
+# Alternative with screen
 screen /dev/ttyUSB1 1000000
 ```
 
-**Python console script:**
-```bash
-cd ../spud_riscv_soc/fpga/arty
-python run.py -f ../../spud_rv32i-tools/demos/display_demo/build/display_demo.elf
-```
+### Display Mode Selection
 
-### Display Modes
+Choose the appropriate display mode for your use case:
 
-- **Development Mode**: Use `SIM_DISPLAY=1` to see visual output in your terminal during development
-- **Hardware Mode**: Use `UART_DISPLAY=1` for colorized ANSI output over UART when running on hardware
-- **Hardware Mode (no display)**: Build normally for hardware-only GPIO/peripheral testing
+| Mode | Build Flag | Use Case |
+|------|-----------|----------|
+| No display | (default) | Hardware-only GPIO/peripheral testing |
+| SIM_DISPLAY | `SIM_DISPLAY=1` | Terminal visualization during Verilator simulation |
+| UART_DISPLAY | `UART_DISPLAY=1` | ANSI color output over UART on hardware |
+| Both | Both flags | Works in both simulation and hardware |
 
 ## Troubleshooting
 
-**Error: "riscv32-unknown-elf-gcc not found"**
-- Install the RISC-V toolchain (see setup instructions above)
-- Make sure the toolchain is in your PATH
+**Toolchain not found**
+```bash
+make check-toolchain  # Verify installation
+which riscv32-unknown-elf-gcc  # Check PATH
+```
 
-**Linking errors:**
-- Check that all required source files exist
-- Verify the linker script matches your target memory layout
-- Ensure SpudKit library files are being compiled correctly
+**Build errors**
+- Ensure all source files exist in `demos/<name>/src/`
+- Check that SpudKit library is compiling correctly
+- Try `make clean && make <demo>` to rebuild from scratch
 
-**Program doesn't run on hardware:**
-- Verify the memory map matches your SoC configuration
-- Check that the reset vector is correctly set
-- Ensure UART baud rate matches hardware configuration (1Mbaud)
+**Serial port access denied**
+```bash
+sudo usermod -a -G dialout $USER  # Add to dialout group
+# Log out and back in for changes to take effect
+```
 
-**UART colors not displaying:**
-- Use `minicom -c` to enable color support
-- Try `screen` instead of minicom for better ANSI support
-- Ensure terminal supports 256-color ANSI sequences
-- Check serial port permissions and connection
+**UART colors not showing**
+- Use `minicom -c` or `screen` for ANSI color support
+- Build with `UART_DISPLAY=1` flag
+- Verify terminal supports 256-color ANSI
 
-**Display not updating:**
-- Verify `display_update()` is being called
-- Check that framebuffer operations are working correctly
-- For UART mode, ensure proper line endings (`\r\n`)
+**Display not updating**
+- Call `display_update()` after drawing operations
+- Check that correct display mode is enabled (SIM_DISPLAY or UART_DISPLAY)
 
-**Serial port issues:**
-- Check device permissions: `ls -l /dev/ttyUSB*`
-- Kill stuck processes: `sudo fuser -k /dev/ttyUSB1`
-- Verify baud rate matches hardware: 1000000
+**Program doesn't run on hardware**
+- Verify FPGA bitstream is loaded
+- Check serial device: try `/dev/ttyUSB0` instead of `/dev/ttyUSB1`
+- Ensure baud rate matches (1000000 default)
+- Try resetting the FPGA board
+
+## Quick Reference
+
+### Common Make Commands
+```bash
+make list              # Show all demos
+make <demo>            # Build specific demo
+make all               # Build all demos
+make clean             # Clean build artifacts
+make check-toolchain   # Verify toolchain installation
+```
+
+### Memory Map
+| Address | Peripheral | Headers |
+|---------|-----------|---------|
+| 0x80000000 | Main Memory (256MB) | - |
+| 0x90000000 | IRQ Controller | `irq.h` |
+| 0x91000000 | Timer | `timer.h` |
+| 0x92000000 | UART | `uart.h` |
+| 0x93000000 | SPI | `spi.h` |
+| 0x94000000 | GPIO | `gpio.h` |
+| 0x95000000 | LED Matrix | `led.h` |
+| 0x96000000 | Display Controller | `display.h` |
+
+### SpudKit API Examples
+```c
+// UART
+uart_init();
+uart_puts("Hello\r\n");
+uart_putc('A');
+
+// Display
+display_clear(RGB565(0, 0, 0));
+display_draw_pixel(x, y, color);
+display_draw_line(x1, y1, x2, y2, color);
+display_draw_rect(x, y, w, h, color);
+display_fill_rect(x, y, w, h, color);
+display_draw_circle(cx, cy, radius, color);
+display_update();
+
+// GPIO
+gpio_set_direction(pin, GPIO_OUTPUT);
+gpio_write(pin, 1);
+uint32_t value = gpio_read(pin);
+
+// Timer
+timer_init(0, period);
+timer_enable(0);
+```
+
+### Build Flags
+- `SIM_DISPLAY=1` - Enable terminal display output (simulation)
+- `UART_DISPLAY=1` - Enable UART ANSI color output (hardware)
+
+## Additional Resources
+
+- [SPUD Environment Documentation](../README.md) - Parent project with convenience scripts
+- [RISC-V SoC Documentation](../spud_riscv_soc/README.md) - Hardware details and memory map
+- Demo source code - Best reference for using SpudKit features
